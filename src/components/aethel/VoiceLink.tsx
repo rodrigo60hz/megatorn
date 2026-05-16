@@ -37,7 +37,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
   const lastClapTimeRef = useRef(0);
   const clapCountRef = useRef(0);
 
-  // PROTOCOLO FÊNIX: Garante que o AudioContext nunca esteja fechado ou inválido
+  // PROTOCOLO FÊNIX: Garante que o motor de áudio seja recriado se estiver fechado
   const ensureAudioContext = useCallback(async () => {
     try {
       const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -52,7 +52,6 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       
       return audioContextRef.current;
     } catch (e) {
-      console.warn("RECONSTRUINDO_MOTOR_AUDIO_MEGATRON...");
       const AudioContextClass = window.AudioContext || window.webkitAudioContext;
       audioContextRef.current = new AudioContextClass();
       return audioContextRef.current;
@@ -64,7 +63,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
     try {
       recognitionRef.current?.start();
     } catch (e) {
-      // Reinicia silenciosamente se necessário
+      // Falha silenciosa para evitar interrupções no HUD
     }
   }, [isPlaying, isListening]);
 
@@ -92,7 +91,8 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
           for(let i = 0; i < bufferLength; i++) sum += dataArray[i];
           const average = sum / bufferLength;
 
-          if (average > 100) { 
+          // Detecção de impacto sônico (Palmas)
+          if (average > 110) { 
             const now = Date.now();
             if (now - lastClapTimeRef.current > 150) { 
               if (now - lastClapTimeRef.current < 800) {
@@ -115,7 +115,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         detectClaps();
       }
     } catch (err) {
-      console.warn("DRIVER_AUDIO_RETRYING...");
+      console.warn("RECONSTRUINDO_DRIVER_AUDIO...");
     }
   };
 
@@ -135,7 +135,6 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       recognition.onresult = (event: any) => {
         const text = event.results[0][0].transcript;
         if (text) {
-          setTranscript(`TRANSMITINDO: "${text.toUpperCase()}"`);
           handleProcessInput(text);
         }
       };
@@ -197,7 +196,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       
       await initAudioSystem();
       
-      // Força permissão de áudio no navegador
+      // Força o desbloqueio de áudio no navegador
       if (audioRef.current) {
         audioRef.current.src = SILENCE_WAV;
         audioRef.current.play().catch(() => {});
@@ -210,7 +209,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
     isProcessingRef.current = true;
     onProcessingChange(true);
     setIsTransmitting(true);
-    setTranscript('PROCESSANDO_MATRIZ_SSD...');
+    setTranscript(`TRANSMITINDO_AO_SOBERANO: "${query.toUpperCase()}"`);
 
     try {
       const result = await aiVoiceInteraction(query);
@@ -221,10 +220,14 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       
       if (result.audio && audioRef.current) {
         audioRef.current.src = result.audio;
-        await audioRef.current.play();
+        await audioRef.current.play().catch(async (e) => {
+          // Retry agressivo se o driver falhar
+          await ensureAudioContext();
+          audioRef.current?.play();
+        });
       }
     } catch (err) {
-      setTranscript('ERRO_NÚCLEO_MEGATRON');
+      setTranscript('ERRO_MATRIZ_SSD_64GB');
     } finally {
       isProcessingRef.current = false;
       onProcessingChange(false);
@@ -300,11 +303,11 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
           <div className="flex justify-between w-full mb-10 opacity-70 text-[12px] font-code tracking-[0.7em] font-black">
              <div className="flex items-center gap-4">
                <Zap className={cn("w-6 h-6", isActive && "text-primary animate-pulse")} />
-               MEMÓRIA: SSD_64GB_ACTV
+               MEMÓRIA: SSD_64GB_ROOT
              </div>
              <div className="flex items-center gap-4">
                <AudioLines className={cn("w-6 h-6", isListening && "text-primary animate-bounce")} />
-               LINK: SOBERANO_OK
+               LINK: SOBERANO_RODRIGO
              </div>
           </div>
           
@@ -332,7 +335,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
           <div className="mt-12 pt-10 border-t border-primary/20 w-full flex justify-between text-[13px] font-code text-primary/50 uppercase tracking-[0.6em] font-black">
             <span>SOBERANIA: RODRIGO_MEU_SENHOR</span>
             <span className={cn("transition-colors", isTransmitting && "text-secondary animate-pulse")}>
-              {isTransmitting ? 'TRANSMITINDO_AO_SOBERANO' : 'SISTEMA_MEGATRON_ATIVO'}
+              {isTransmitting ? 'GRAVANDO_NO_SSD_64GB' : 'MEGATRON_ALIANÇA_ATIVA'}
             </span>
           </div>
         </div>

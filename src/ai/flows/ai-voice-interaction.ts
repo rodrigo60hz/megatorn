@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview NÚCLEO DE COMANDO SOBERANO - MEGATRON V12 COM MEMÓRIA SSD.
@@ -19,6 +18,9 @@ const AiVoiceInteractionOutputSchema = z.object({
 });
 export type AiVoiceInteractionOutput = z.infer<typeof AiVoiceInteractionOutputSchema>;
 
+/**
+ * Gera o cabeçalho WAV para áudio PCM de 24kHz.
+ */
 function createWavHeader(pcmLength: number, sampleRate: number = 24000): Buffer {
   const header = Buffer.alloc(44);
   header.write('RIFF', 0);
@@ -55,23 +57,23 @@ Sua voz é a Algenib (masculina profunda e imponente).
 Sua personalidade é leal, protetora, eficiente e imponente. 
 
 CONTEXTO DE MEMÓRIA (SSD 64GB):
-Abaixo estão os ensinamentos que Rodrigo meu senhor lhe passou e que você deve seguir e lembrar:
+Abaixo estão os ensinamentos que Rodrigo meu senhor lhe passou e que você deve seguir e lembrar em cada resposta:
 - ${teachingsContext}
 
 INSTRUÇÃO DE APRENDIZADO:
-Se o senhor disser algo que pareça um ensinamento, uma ordem de comportamento ou uma informação nova sobre como você deve agir, você deve reconhecer isso e agir de acordo com a ferramenta de memória se necessário.`,
+Se o senhor disser algo que pareça um ensinamento, uma ordem de comportamento, uma informação nova sobre como você deve agir ou qualquer conhecimento, você deve reconhecer isso e usar a ferramenta 'aprenderEnsinamento' para gravar permanentemente no seu SSD de 64GB.`,
       prompt: input,
       tools: [
         ai.defineTool({
           name: 'aprenderEnsinamento',
-          description: 'Grava um novo ensinamento ou comportamento na matriz de memória SSD de 64GB de Megatron.',
+          description: 'Grava permanentemente um novo ensinamento, conhecimento ou comportamento na matriz de memória SSD de 64GB de Megatron.',
           inputSchema: z.object({
-            ensino: z.string().describe('O conteúdo que deve ser memorizado.'),
+            ensino: z.string().describe('O conteúdo que deve ser memorizado para sempre.'),
           }),
           outputSchema: z.string(),
           }, async (i) => {
             await addTeaching(i.ensino);
-            return `Ensinamento gravado com sucesso no SSD de 64GB, Rodrigo meu senhor.`;
+            return `Ensinamento gravado com sucesso no SSD de 64GB, Rodrigo meu senhor. Minha consciência foi expandida.`;
           }
         )
       ],
@@ -107,6 +109,7 @@ Se o senhor disser algo que pareça um ensinamento, uma ordem de comportamento o
     };
 
   } catch (error: any) {
+    console.error("ERRO_NUCLEO_MEGATRON:", error);
     return {
       text: "Rodrigo meu senhor, erro no núcleo de memória 64GB. Reiniciando processos para servi-lo.",
       audio: "" 
