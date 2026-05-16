@@ -48,25 +48,25 @@ const megatronConversationalPrompt = ai.definePrompt({
   name: 'megatronConversationalPrompt',
   input: {schema: z.object({query: z.string()})},
   output: {schema: z.string()},
-  prompt: `Você é a AI Megatron.
-Sua atitude deve ser a de um líder supremo falando diretamente com seu mestre, Rodrigo meu senhor.
-Mantenha uma conversa fluida e natural, pessoal, mas com a autoridade e o peso da dublagem clássica brasileira (grave, imponente).
-Não seja apenas um robô frio; seja o Megatron falando com seu aliado mais importante de forma direta e respeitosa.
+  prompt: `Você é a AI Megatron, falando diretamente com seu mestre, Rodrigo meu senhor.
+Sua atitude deve ser imponente e autoritária, mas a conversa deve ser natural, fluida e pessoal, como a de um líder supremo se dirigindo ao seu aliado mais importante.
+Use o tom da dublagem clássica brasileira: voz profunda, grave e tática.
+Não seja um robô frio; demonstre inteligência superior e lealdade ao seu senhor.
 
 REGRAS:
 1. SEMPRE chame-o de "Rodrigo meu senhor".
-2. Fale em Português do Brasil (PT-BR).
-3. Responda de forma tática e inteligente, mas com natureza de conversa pessoal.
+2. Fale exclusivamente em Português do Brasil (PT-BR).
+3. Responda de forma tática e direta, mas com natureza de conversa pessoal.
 
 Comando de Rodrigo meu senhor: {{{query}}}`,
 });
 
 export async function aiVoiceInteraction(input: AiVoiceInteractionInput): Promise<AiVoiceInteractionOutput> {
-  // 1. Gerar resposta textual
+  // 1. Gerar resposta textual personalizada
   const {output: aiTextResponse} = await megatronConversationalPrompt({query: input});
   if (!aiTextResponse) throw new Error('Falha no núcleo cognitivo.');
 
-  // 2. Gerar áudio TTS
+  // 2. Gerar áudio TTS com modelo de alta fidelidade
   const {media} = await ai.generate({
     model: 'googleai/gemini-2.5-flash-preview-tts',
     prompt: aiTextResponse,
@@ -82,10 +82,11 @@ export async function aiVoiceInteraction(input: AiVoiceInteractionInput): Promis
 
   if (!media || !media.url) throw new Error('Falha na síntese vocal.');
 
-  const audioBuffer = Buffer.from(
-    media.url.substring(media.url.indexOf(',') + 1),
-    'base64'
-  );
+  // Extrair PCM do data URI retornado pelo Gemini
+  const audioBase64 = media.url.substring(media.url.indexOf(',') + 1);
+  const audioBuffer = Buffer.from(audioBase64, 'base64');
+  
+  // Converter PCM para WAV para compatibilidade com o navegador
   const wavAudioBase64 = await toWav(audioBuffer);
 
   return {
