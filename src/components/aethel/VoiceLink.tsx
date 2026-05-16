@@ -13,21 +13,16 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const startVoiceInteraction = async () => {
-    // In a real browser implementation, we'd use Web Speech API for STT
-    // Since we're bridging to the pre-built flow, we'll simulate the "listening" part 
-    // and use a demo prompt or just wait for user text if it were integrated better.
-    // For this UI demo, clicking mic will prompt for a manual command to feed into the voice flow.
-    
-    const query = prompt("Speak to Aethel (Type your command for audio response):");
+    const query = prompt("Fale com Megatron (Digite seu comando para resposta em áudio):");
     if (!query) return;
 
     setIsListening(true);
     onProcessingChange(true);
-    setTranscript(`Listening: "${query}"`);
+    setTranscript(`Escutando: "${query}"`);
 
     try {
       const result = await aiVoiceInteraction(query);
-      setTranscript(`Aethel: ${result.text}`);
+      setTranscript(`Megatron: ${result.text}`);
       
       if (audioRef.current) {
         audioRef.current.src = result.audio;
@@ -36,7 +31,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       }
     } catch (error) {
       console.error(error);
-      setTranscript("Voice link transmission failed.");
+      setTranscript("Falha na transmissão do link de voz.");
     } finally {
       setIsListening(false);
       onProcessingChange(false);
@@ -48,7 +43,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       <div className="hud-glass p-6 rounded-2xl flex flex-col items-center gap-4 w-64 border-secondary/20 shadow-[0_0_30px_rgba(99,102,241,0.1)]">
         <div className="flex items-center gap-2 self-start">
           <Radio className="w-4 h-4 text-secondary" />
-          <span className="text-[10px] font-headline font-bold text-secondary uppercase tracking-widest">Voice Link</span>
+          <span className="text-[10px] font-headline font-bold text-secondary uppercase tracking-widest">Link de Voz</span>
         </div>
 
         <div className="relative">
@@ -72,7 +67,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
 
         <div className="w-full text-center h-12 overflow-hidden">
           <p className="text-[10px] font-code text-secondary/70 leading-tight">
-            {transcript || "Standby for voice command..."}
+            {transcript || "Aguardando comando de voz..."}
           </p>
         </div>
 

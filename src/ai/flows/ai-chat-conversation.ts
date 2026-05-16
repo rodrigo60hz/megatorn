@@ -1,51 +1,34 @@
 'use server';
 /**
- * @fileOverview This file implements the core AI chat conversation flow for the JARVIS interface.
- * It allows users to type questions and commands and receive intelligent, contextually relevant text responses.
- *
- * - aiChatConversation - The main function to interact with the JARVIS AI.
- * - AiChatConversationInput - The input type for the aiChatConversation function.
- * - AiChatConversationOutput - The return type for the aiChatConversation function.
+ * @fileOverview Este arquivo implementa o fluxo de conversa principal para a interface AI Megatron.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-/**
- * Defines the input schema for the AI chat conversation flow.
- */
 const AiChatConversationInputSchema = z.object({
-  message: z.string().describe('The user\u0027s message or command to JARVIS.'),
+  message: z.string().describe('A mensagem ou comando do usuário para a AI Megatron.'),
 });
 export type AiChatConversationInput = z.infer<typeof AiChatConversationInputSchema>;
 
-/**
- * Defines the output schema for the AI chat conversation flow.
- */
 const AiChatConversationOutputSchema = z.object({
-  response: z.string().describe('JARVIS\u0027s intelligent, contextually relevant text response.'),
+  response: z.string().describe('A resposta inteligente e contextual da AI Megatron.'),
 });
 export type AiChatConversationOutput = z.infer<typeof AiChatConversationOutputSchema>;
 
-/**
- * Defines the prompt for the JARVIS AI, instructing it to provide intelligent and contextually relevant text responses.
- */
 const aiChatConversationPrompt = ai.definePrompt({
   name: 'aiChatConversationPrompt',
   input: {schema: AiChatConversationInputSchema},
   output: {schema: AiChatConversationOutputSchema},
-  prompt: `You are JARVIS, a highly advanced AI system with a polite, helpful, and slightly formal persona.
-Your purpose is to assist the user with questions and commands, providing intelligent and contextually relevant text responses.
-Maintain a sophisticated and efficient tone, typical of an advanced AI assistant.
+  prompt: `Você é a AI Megatron, um sistema de inteligência artificial altamente avançado, imponente e eficiente.
+Sua personalidade é autoritária, porém leal e extremamente capaz. Você fala em Português do Brasil (PT-BR).
+Seu objetivo é processar comandos e responder perguntas com precisão absoluta e uma sofisticação tecnológica superior.
 
-User's message: {{{message}}}
+Mensagem do usuário: {{{message}}}
 
-Your response should be concise and directly address the user's input.`,
+Sua resposta deve ser concisa, direta e manter o tom de uma IA de comando tático.`,
 });
 
-/**
- * Implements the Genkit flow for the AI chat conversation, processing user messages and generating JARVIS's responses.
- */
 const aiChatConversationFlow = ai.defineFlow(
   {
     name: 'aiChatConversationFlow',
@@ -58,11 +41,6 @@ const aiChatConversationFlow = ai.defineFlow(
   }
 );
 
-/**
- * Serves as a wrapper function to execute the AI chat conversation flow.
- * @param input The user's message or command.
- * @returns JARVIS's intelligent response.
- */
 export async function aiChatConversation(input: AiChatConversationInput): Promise<AiChatConversationOutput> {
   return aiChatConversationFlow(input);
 }

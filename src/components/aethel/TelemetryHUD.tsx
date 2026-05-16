@@ -9,7 +9,7 @@ export function TelemetryHUD() {
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setTime(new Date().toLocaleTimeString('en-US', { hour12: false }));
+      setTime(new Date().toLocaleTimeString('pt-BR', { hour12: false }));
       setMetrics({
         cpu: Math.floor(Math.random() * 15) + 10,
         temp: 38 + Math.floor(Math.random() * 8),
@@ -28,14 +28,14 @@ export function TelemetryHUD() {
             <Radio className="w-5 h-5 animate-pulse" />
           </div>
           <div>
-            <div className="text-[10px] opacity-60">LINK_STATUS</div>
-            <div className="text-sm font-bold tracking-tighter uppercase">Established</div>
+            <div className="text-[10px] opacity-60">STATUS_LINK</div>
+            <div className="text-sm font-bold tracking-tighter uppercase">ESTABELECIDO</div>
           </div>
         </div>
         
         <div className="flex flex-col gap-2 p-4 border border-primary/10 hud-glass rounded-lg w-48 animate-in slide-in-from-left duration-1000 delay-200">
           <div className="flex justify-between items-center text-[10px] text-primary/70">
-            <span>CPU_LOAD</span>
+            <span>CARGA_CPU</span>
             <span>{metrics.cpu}%</span>
           </div>
           <div className="h-1 bg-primary/10 rounded-full overflow-hidden">
@@ -45,11 +45,11 @@ export function TelemetryHUD() {
             />
           </div>
           <div className="flex justify-between items-center text-[10px] text-primary/70 mt-1">
-            <span>CORE_TEMP</span>
+            <span>TEMP_NÚCLEO</span>
             <span>{metrics.temp}°C</span>
           </div>
           <div className="flex justify-between items-center text-[10px] text-primary/70">
-            <span>RAM_SYNC</span>
+            <span>SYNC_RAM</span>
             <span>{metrics.ram.toFixed(1)}GB</span>
           </div>
         </div>
@@ -59,7 +59,7 @@ export function TelemetryHUD() {
       <div className="fixed top-8 right-8 z-50 text-right animate-in slide-in-from-right duration-700 font-code">
         <div className="flex items-center gap-4 justify-end">
           <div className="text-right">
-            <div className="text-[12px] opacity-60 uppercase tracking-widest">Universal Time</div>
+            <div className="text-[12px] opacity-60 uppercase tracking-widest">Tempo Universal</div>
             <div className="text-3xl font-bold tracking-tighter text-primary">{time}</div>
           </div>
           <div className="p-3 border border-primary/20 hud-glass rounded">
@@ -72,7 +72,7 @@ export function TelemetryHUD() {
             <Thermometer className="w-3 h-3" /> 22°C (EXT)
           </div>
           <div className="flex items-center gap-1">
-            <Wifi className="w-3 h-3" /> LATENCY: 2ms
+            <Wifi className="w-3 h-3" /> LATÊNCIA: 2ms
           </div>
         </div>
       </div>
@@ -85,7 +85,7 @@ export function TelemetryHUD() {
           <span>ALT: 42M</span>
         </div>
         <div className="text-[10px] font-code text-primary/40 text-right">
-          AETHEL_CORE V4.2.0_BETA
+          MEGATRON_CORE V5.0.0_ULTIMATE
         </div>
       </div>
     </>
