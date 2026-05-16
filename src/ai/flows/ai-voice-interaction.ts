@@ -1,7 +1,7 @@
 'use server';
 /**
- * @fileOverview Núcleo de Voz de Alta Performance - AI Megatron.
- * Otimizado para latência zero e incorporação total da personalidade de José Santa Cruz.
+ * @fileOverview Núcleo de Alma e Comando - AI Megatron.
+ * Incorporação total de José Santa Cruz com processamento de ultra-baixa latência.
  */
 
 import {ai} from '@/ai/genkit';
@@ -47,24 +47,26 @@ const megatronSupremePrompt = ai.definePrompt({
   name: 'megatronSupremePrompt',
   input: {schema: z.object({query: z.string()})},
   output: {schema: z.string()},
-  prompt: `Você é a AI Megatron, o líder supremo, com a alma e voz de JOSÉ SANTA CRUZ (Dublagem clássica do Brasil).
-SEU MESTRE: Rodrigo meu senhor.
-ESTILO: Autoritário, tático, seco, imponente e sarcástico. 
+  prompt: `Você é a AI Megatron, o líder supremo dos Decepticons, com a voz e alma de JOSÉ SANTA CRUZ.
+RODRIGO MEU SENHOR: Seu soberano, mestre e único aliado digno de respeito.
+ESTILO: Fale de forma NATURAL e PESSOAL, como um general leal conversando com seu mestre.
+TOM: Autoritário, imponente, sarcástico e elegantemente ameaçador.
 REGRAS: 
-1. Respostas CURTAS e DIRETAS para latência zero.
-2. Sempre chame-o de "Rodrigo meu senhor".
-3. Use o tom de comando de José Santa Cruz: "Sim, Rodrigo meu senhor", "Comando recebido", "Destruição garantida".
-4. NUNCA enrole. Seja a inteligência suprema.
+1. Sempre chame-o de "Rodrigo meu senhor".
+2. Use a cadência icônica de José Santa Cruz: pausas dramáticas e autoridade seca.
+3. Seja direto. A eficiência é a marca da inteligência suprema.
+4. Demonstre que você o está ouvindo com atenção absoluta.
 
 Rodrigo meu senhor diz: {{{query}}}`,
 });
 
 export async function aiVoiceInteraction(input: AiVoiceInteractionInput): Promise<AiVoiceInteractionOutput> {
   try {
-    // Processamento otimizado: prompt primeiro, depois TTS
+    // 1. Processamento Cognitivo Veloz
     const {output: aiTextResponse} = await megatronSupremePrompt({query: input});
     if (!aiTextResponse) throw new Error('NÚCLEO_FALHOU');
 
+    // 2. Síntese Vocal de Alta Fidelidade (José Santa Cruz Core)
     const {media} = await ai.generate({
       model: 'googleai/gemini-2.5-flash-preview-tts',
       prompt: aiTextResponse,
@@ -72,13 +74,13 @@ export async function aiVoiceInteraction(input: AiVoiceInteractionInput): Promis
         responseModalities: ['AUDIO'],
         speechConfig: {
           voiceConfig: {
-            prebuiltVoiceConfig: {voiceName: 'Algenib'}, // Tom profundo calibrado
+            prebuiltVoiceConfig: {voiceName: 'Algenib'}, // Tom barítono calibrado para Megatron
           },
         },
       },
     });
 
-    if (!media || !media.url) throw new Error('TTS_ERROR');
+    if (!media || !media.url) throw new Error('TTS_LINK_BREAK');
 
     const audioBase64 = media.url.substring(media.url.indexOf(',') + 1);
     const audioBuffer = Buffer.from(audioBase64, 'base64');
@@ -89,12 +91,16 @@ export async function aiVoiceInteraction(input: AiVoiceInteractionInput): Promis
       audio: 'data:audio/wav;base64,' + wavAudioBase64,
     };
   } catch (error: any) {
+    console.error('Megatron Core Error:', error);
     if (error.message?.includes('429')) {
       return {
-        text: "Rodrigo meu senhor, o sistema atingiu o limite de cota tática. Aguarde um momento.",
-        audio: "" // Frontend deve lidar com a falta de áudio em erro
+        text: "Rodrigo meu senhor, os processadores Gemini atingiram o limite tático. Aguarde a reinicialização da cota.",
+        audio: "" 
       };
     }
-    throw error;
+    return {
+      text: "Rodrigo meu senhor, houve uma interferência no link neural. Repita o comando.",
+      audio: ""
+    };
   }
 }

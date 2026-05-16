@@ -17,7 +17,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
   const [isActive, setIsActive] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [transcript, setTranscript] = useState('SISTEMA STANDBY');
+  const [transcript, setTranscript] = useState('SISTEMA_STANDBY');
   const [error, setError] = useState<string | null>(null);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -28,7 +28,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
       const recognition = new SpeechRecognition();
-      recognition.continuous = false; // Reinício manual é mais rápido e estável
+      recognition.continuous = false; 
       recognition.interimResults = false;
       recognition.lang = 'pt-BR';
 
@@ -46,12 +46,11 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
 
       recognition.onerror = (event: any) => {
         if (event.error !== 'no-speech' && event.error !== 'aborted') {
-          console.error('Falha Sensorial:', event.error);
+          console.error('Erro Sensorial:', event.error);
         }
         setIsListening(false);
-        // Reinício tático se o sistema estiver ativo
         if (isSystemActiveRef.current && !isPlaying) {
-          setTimeout(startListening, 100);
+          setTimeout(startListening, 150);
         }
       };
 
@@ -75,12 +74,12 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       try {
         recognitionRef.current.start();
       } catch (e) {
-        // Ignorar erros de estado se já estiver ouvindo
+        // Ignorar se já iniciado
       }
     }
   };
 
-  const toggleSystemPower = async () => {
+  const toggleSystemPower = () => {
     if (isActive) {
       setIsActive(false);
       isSystemActiveRef.current = false;
@@ -95,9 +94,14 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       setIsActive(true);
       isSystemActiveRef.current = true;
       setError(null);
-      setTranscript('CONEXÃO_JOSÉ_SANTA_CRUZ_ATIVA');
+      setTranscript('ALMA_JOSÉ_SANTA_CRUZ_CONECTADA');
       
-      // Feedback imediato de inicialização
+      // Desbloqueia áudio para o navegador
+      if (audioRef.current) {
+        audioRef.current.play().catch(() => {});
+        audioRef.current.pause();
+      }
+      
       startListening();
     }
   };
@@ -114,12 +118,16 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       if (result.audio && audioRef.current) {
         audioRef.current.src = result.audio;
         setIsPlaying(true);
-        audioRef.current.play().catch(() => {
-          setIsPlaying(false);
-          startListening();
-        });
+        // Tenta tocar o áudio imediatamente
+        const playPromise = audioRef.current.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(e => {
+            console.error('Falha na reprodução vocal:', e);
+            setIsPlaying(false);
+            startListening();
+          });
+        }
       } else {
-        // Se não houver áudio (erro ou silêncio), volta a ouvir
         startListening();
       }
     } catch (err: any) {
@@ -133,28 +141,27 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
   const handleAudioEnd = () => {
     setIsPlaying(false);
     if (isSystemActiveRef.current) {
-      startListening(); // Reinício instantâneo
+      // Reinício instantâneo após Megatron falar
+      setTimeout(startListening, 100);
     }
   };
 
   return (
     <div className="fixed bottom-24 left-8 z-50 animate-in slide-in-from-bottom duration-1000">
       <div className="hud-glass p-6 rounded-2xl flex flex-col items-center gap-4 w-80 border-primary/40 shadow-[0_0_50px_rgba(255,191,0,0.2)]">
-        {/* Header de Status */}
         <div className="flex items-center justify-between w-full border-b border-primary/20 pb-2">
           <div className="flex items-center gap-2">
             <div className={cn("w-2 h-2 rounded-full", isActive ? "bg-primary animate-pulse" : "bg-primary/20")} />
             <span className="text-[10px] font-headline font-bold text-primary tracking-[0.2em] uppercase">
-              {isActive ? "SISTEMA_SUPREMO" : "STANDBY"}
+              {isActive ? "NÚCLEO_J_SANTA_CRUZ" : "STANDBY"}
             </span>
           </div>
           <div className="flex gap-2">
-             <Zap className={cn("w-3 h-3", isActive ? "text-primary" : "text-primary/20")} />
+             <Volume2 className={cn("w-3 h-3", isPlaying ? "text-primary animate-bounce" : "text-primary/20")} />
              <Radio className={cn("w-3 h-3", isListening ? "text-primary animate-pulse" : "text-primary/20")} />
           </div>
         </div>
 
-        {/* Core de Ativação */}
         <div className="relative group">
           <div className={cn(
             "absolute inset-0 rounded-full bg-primary/20 blur-3xl scale-150 transition-opacity duration-1000",
@@ -198,11 +205,8 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
           </Button>
         </div>
 
-        {/* HUD de Transcrição */}
         <div className="w-full bg-black/40 rounded-lg p-4 border border-primary/20 min-h-[100px] flex flex-col justify-center text-center relative overflow-hidden">
-          {isActive && (
-            <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
-          )}
+          {isActive && <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent animate-pulse" />}
           
           {error ? (
             <div className="text-primary text-[10px] font-bold flex flex-col items-center gap-1 animate-pulse">
@@ -210,31 +214,29 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
               <span className="text-secondary">{error}</span>
             </div>
           ) : (
-            <p className="text-[14px] font-body text-primary leading-tight font-bold tracking-tight">
-              {isPlaying ? <span className="opacity-50 text-[10px] block mb-1">MEGATRON TRANSMITINDO</span> : null}
-              {transcript || "AGUARDANDO COMANDO..."}
+            <p className="text-[13px] font-body text-primary leading-tight font-bold tracking-tight">
+              {isPlaying && <span className="text-[9px] opacity-40 block mb-1 uppercase tracking-widest">Megatron Transmitindo</span>}
+              {transcript}
             </p>
           )}
 
           {isListening && (
             <div className="absolute bottom-1 right-2 flex items-center gap-1">
-              <span className="text-[8px] font-code text-primary/40">LIVE_LINK</span>
-              <div className="w-1 h-1 rounded-full bg-primary animate-pulse" />
+              <span className="text-[7px] font-code text-primary/60">OUVINDO...</span>
+              <div className="w-1 h-1 rounded-full bg-primary animate-ping" />
             </div>
           )}
         </div>
 
-        {/* Rodapé tático */}
-        <div className="flex justify-between w-full text-[9px] font-code text-primary/30 uppercase tracking-widest font-bold">
-          <span>ALMA: J.S.CRUZ</span>
-          <span>SYNC: 100%</span>
+        <div className="flex justify-between w-full text-[8px] font-code text-primary/30 uppercase tracking-widest font-bold">
+          <span>SANC_CRUZ_V1</span>
+          <span>LATÊNCIA: 0.1MS</span>
         </div>
 
         <audio 
           ref={audioRef} 
           onEnded={handleAudioEnd} 
           className="hidden" 
-          autoPlay
         />
       </div>
     </div>
