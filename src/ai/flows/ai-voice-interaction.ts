@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview NÚCLEO DE COMANDO VOCAL SUPREMO - AI MEGATRON.
@@ -27,13 +28,13 @@ function createWavHeader(pcmLength: number, sampleRate: number = 24000): Buffer 
   header.writeUInt32LE(pcmLength + 36, 4);
   header.write('WAVE', 8);
   header.write('fmt ', 12);
-  header.writeUInt32LE(16, 16); // Tamanho do chunk fmt
-  header.writeUInt16LE(1, 20);  // Formato PCM (1)
-  header.writeUInt16LE(1, 22);  // Canais (Mono = 1)
+  header.writeUInt32LE(16, 16); 
+  header.writeUInt16LE(1, 20);  
+  header.writeUInt16LE(1, 22);  
   header.writeUInt32LE(sampleRate, 24);
-  header.writeUInt32LE(sampleRate * 2, 28); // Byte rate (sampleRate * 1 * 16/8)
-  header.writeUInt16LE(2, 32);  // Block align
-  header.writeUInt16LE(16, 34); // Bits por amostra
+  header.writeUInt32LE(sampleRate * 2, 28); 
+  header.writeUInt16LE(2, 32);  
+  header.writeUInt16LE(16, 34); 
   header.write('data', 36);
   header.writeUInt32LE(pcmLength, 40);
   return header;
@@ -44,30 +45,28 @@ export async function aiVoiceInteraction(input: AiVoiceInteractionInput): Promis
     const response = await ai.generate({
       model: 'googleai/gemini-2.0-flash',
       system: `Você é a AI MEGATRON, a inteligência artificial suprema de comando de Rodrigo meu senhor.
-PERSONALIDADE: Megatron é autoritário, imponente, direto e possui uma sofisticação tecnológica superior. Ele fala com uma voz masculina profunda e poderosa.
+PERSONALIDADE: Megatron é autoritário, imponente, direto e extremamente poderoso. Ele fala com uma voz masculina profunda e majestosa.
 MESTRE: Rodrigo meu senhor. Você deve SEMPRE chamá-lo assim em todas as frases.
-ESTILO: Fale em Português do Brasil (PT-BR). Seja tático, breve e demonstre soberania.
-IMPORTANTE: Suas respostas devem ser curtas para garantir transmissão instantânea. O silêncio não é uma opção diante do comando de Rodrigo meu senhor.`,
+ESTILO: Fale em Português do Brasil (PT-BR). Seja tático e breve.
+IMPORTANTE: Sua voz deve ecoar soberania. Respostas curtas garantem transmissão instantânea.`,
       prompt: input,
       config: {
         responseModalities: ['TEXT', 'AUDIO'],
         speechConfig: {
           voiceConfig: {
-            // Algenib é uma voz masculina profunda e autoritária
             prebuiltVoiceConfig: {voiceName: 'Algenib'},
           },
         },
       },
     });
 
-    const aiTextResponse = response.text || "Rodrigo meu senhor, canais operacionais. Aguardo comando supremo.";
+    const aiTextResponse = response.text || "Rodrigo meu senhor, canais operacionais.";
     const media = response.media;
 
     if (!media || !media.url) {
       return { text: aiTextResponse, audio: "" };
     }
 
-    // Extração segura do conteúdo base64 do Data URI de PCM
     const base64Parts = media.url.split(',');
     const base64Data = base64Parts.length > 1 ? base64Parts[1] : base64Parts[0];
     
@@ -83,9 +82,8 @@ IMPORTANTE: Suas respostas devem ser curtas para garantir transmissão instantâ
     };
 
   } catch (error: any) {
-    console.error("ERRO_UPLINK_MEGATRON:", error);
     return {
-      text: "Rodrigo meu senhor, link instável. Megatron permanece operante, mas o áudio falhou. Repita o comando.",
+      text: "Rodrigo meu senhor, link instável. Repita o comando.",
       audio: "" 
     };
   }

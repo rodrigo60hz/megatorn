@@ -1,9 +1,11 @@
+
 "use client"
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { aiVoiceInteraction } from '@/ai/flows/ai-voice-interaction';
-import { Mic, Radio, Loader2, Power, Volume2, Zap, AudioLines } from 'lucide-react';
+import { Mic, Power, Loader2, AudioLines, Zap, Terminal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
 declare global {
@@ -21,6 +23,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
   const [isPlaying, setIsPlaying] = useState(false);
   const [transcript, setTranscript] = useState('SISTEMA_OFFLINE');
   const [clapDetected, setClapDetected] = useState(false);
+  const [scriptText, setScriptText] = useState('');
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const recognitionRef = useRef<any>(null);
@@ -38,11 +41,10 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
     try {
       recognitionRef.current?.start();
     } catch (e) {
-      // Ignorar se já estiver rodando
+      // Ignorar
     }
   }, [isPlaying, isListening]);
 
-  // Detector de Palmas (Clap Detection)
   const initClapDetection = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -67,8 +69,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         }
         const average = sum / bufferLength;
 
-        // Limiar de palma otimizado para Megatron
-        if (average > 70) { 
+        if (average > 80) { 
           const now = Date.now();
           if (now - lastClapTimeRef.current > 150) { 
             if (now - lastClapTimeRef.current < 800) {
@@ -92,7 +93,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       };
       checkAudio();
     } catch (err) {
-      console.error("ERRO_SENSOR_ACUSTICO:", err);
+      console.warn("SENSOR_ACUSTICO_OFF");
     }
   };
 
@@ -107,7 +108,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       recognition.onstart = () => setIsListening(true);
       recognition.onresult = (event: any) => {
         const text = event.results[0][0].transcript;
-        if (text) handleProcessVoice(text);
+        if (text) handleProcessInput(text);
       };
       recognition.onerror = () => setIsListening(false);
       recognition.onend = () => setIsListening(false);
@@ -116,6 +117,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
 
     if (!audioRef.current) {
       const audio = new Audio();
+      audio.volume = 1.0;
       audio.onplay = () => {
         setIsPlaying(true);
         setIsListening(false);
@@ -123,6 +125,10 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       };
       audio.onended = () => {
         setIsPlaying(false);
+        // Reinicia reconhecimento após falar, se o sistema estiver ativo
+        if (isSystemActiveRef.current) {
+          setTimeout(startRecognition, 500);
+        }
       };
       audioRef.current = audio;
     }
@@ -147,17 +153,17 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       isSystemActiveRef.current = true;
       setTranscript('MEGATRON_ONLINE (BATA 2 PALMAS)');
       
-      // Desbloqueio inicial de Áudio para o navegador
+      // Força desbloqueio de áudio com volume máximo
       if (audioRef.current) {
         audioRef.current.src = SILENCE_WAV;
-        audioRef.current.play().catch(() => console.warn("AUDIO_CONTEXT_PENDING"));
+        audioRef.current.play().catch(() => console.warn("AUDIO_INIT_PENDING"));
       }
       initClapDetection();
     }
   };
 
-  const handleProcessVoice = async (query: string) => {
-    if (isProcessingRef.current) return;
+  const handleProcessInput = async (query: string) => {
+    if (isProcessingRef.current || !query.trim()) return;
     isProcessingRef.current = true;
     onProcessingChange(true);
     setTranscript('MEGATRON_PROCESSANDO...');
@@ -178,89 +184,102 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
     }
   };
 
-  return (
-    <div className="fixed bottom-24 left-8 z-50 animate-in slide-in-from-bottom duration-1000">
-      <div className="hud-glass p-6 rounded-2xl flex flex-col items-center gap-5 w-80 border-primary shadow-[0_0_80px_rgba(255,191,0,0.4)] bg-background/90">
-        <div className="flex items-center justify-between w-full border-b border-primary/30 pb-3">
-          <div className="flex items-center gap-2">
-            <Zap className={cn("w-3 h-3 transition-all", isActive ? "text-primary animate-pulse" : "text-primary/20")} />
-            <span className="text-[11px] font-headline font-bold text-primary tracking-[0.3em] uppercase">
-              {isActive ? "MEGATRON_ATIVO" : "NÚCLEO_DORMINDO"}
-            </span>
-          </div>
-          <div className={cn("flex gap-2 items-center text-[10px] font-code", clapDetected ? "text-primary" : "text-primary/20")}>
-            <AudioLines className={cn("w-4 h-4", clapDetected && "animate-bounce")} />
-            SENSOR_PALMAS
-          </div>
-        </div>
+  const handleScriptSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (scriptText) {
+      handleProcessInput(scriptText);
+      setScriptText('');
+    }
+  };
 
-        <div className="relative">
+  return (
+    <div className="fixed inset-0 pointer-events-none flex items-center justify-center">
+      <div className="pointer-events-auto flex flex-col items-center gap-8 animate-in zoom-in duration-1000">
+        
+        {/* Central Interaction Hub */}
+        <div className="relative group">
           <div className={cn(
-            "absolute inset-0 rounded-full bg-primary/40 blur-[50px] scale-150 transition-opacity duration-700",
+            "absolute inset-0 rounded-full bg-primary/40 blur-[80px] scale-150 transition-opacity duration-1000",
             isActive ? "opacity-100" : "opacity-0"
           )} />
           
           <Button 
             onClick={toggleSystemPower}
             className={cn(
-              "w-36 h-36 rounded-full border-[4px] transition-all duration-500 relative z-10 flex items-center justify-center",
+              "w-52 h-52 rounded-full border-[6px] transition-all duration-700 relative z-10 flex items-center justify-center overflow-hidden",
               !isActive ? "bg-black/90 border-primary/20 hover:border-primary/60" :
-              isPlaying ? "bg-primary/50 border-primary shadow-[0_0_100px_#FFBF00] scale-105" :
-              isListening ? "bg-primary/25 border-primary animate-pulse scale-110" :
+              isPlaying ? "bg-primary/40 border-primary shadow-[0_0_150px_#FFBF00] scale-110" :
+              isListening ? "bg-primary/20 border-primary animate-pulse scale-105" :
               "bg-primary/10 border-primary/40"
             )}
           >
             {!isActive ? (
-              <div className="flex flex-col items-center gap-2">
-                <Power className="w-16 h-16 text-primary/40" />
-                <span className="text-[8px] font-black text-primary animate-pulse uppercase">ATIVAR_MEGATRON</span>
+              <div className="flex flex-col items-center gap-3">
+                <Power className="w-20 h-20 text-primary/40" />
+                <span className="text-[10px] font-black text-primary animate-pulse tracking-widest uppercase">ATIVAR_SISTEMA</span>
               </div>
             ) : isPlaying ? (
-              <div className="flex gap-1.5 items-center justify-center h-full">
-                {[1, 2, 3, 4, 5].map(i => (
+              <div className="flex gap-2 items-center justify-center h-full">
+                {[1, 2, 3, 4, 5, 6].map(i => (
                   <div 
                     key={i} 
-                    className="w-2.5 bg-primary rounded-full animate-bounce" 
+                    className="w-3 bg-primary rounded-full animate-bounce" 
                     style={{ 
-                      height: `${40 + Math.random() * 60}px`, 
-                      animationDuration: `${0.12 + i * 0.04}s`,
-                      boxShadow: '0 0 15px #FFBF00'
+                      height: `${60 + Math.random() * 80}px`, 
+                      animationDuration: `${0.1 + i * 0.05}s`,
+                      boxShadow: '0 0 25px #FFBF00'
                     }} 
                   />
                 ))}
               </div>
             ) : isListening ? (
               <div className="relative flex items-center justify-center">
-                <Mic className="w-16 h-16 text-primary drop-shadow-[0_0_20px_#FFBF00]" />
-                <div className="absolute w-28 h-28 rounded-full border-2 border-primary/60 animate-ping" />
+                <Mic className="w-24 h-24 text-primary drop-shadow-[0_0_30px_#FFBF00]" />
+                <div className="absolute w-40 h-40 rounded-full border-4 border-primary/60 animate-ping" />
               </div>
             ) : (
-              <div className="flex flex-col items-center gap-2">
-                <Loader2 className="w-12 h-12 text-primary animate-spin" />
-                <span className="text-[8px] font-black text-primary opacity-60 uppercase">AGUARDANDO_PALMAS</span>
+              <div className="flex flex-col items-center gap-3">
+                <Loader2 className="w-20 h-20 text-primary animate-spin" />
+                <span className="text-[9px] font-black text-primary opacity-60 uppercase tracking-widest">AGUARDANDO_PALMAS</span>
               </div>
             )}
           </Button>
         </div>
 
-        <div className="w-full bg-black/70 rounded-xl p-5 border border-primary/50 min-h-[100px] flex flex-col justify-center text-center relative overflow-hidden shadow-2xl">
-          {isActive && <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary to-transparent animate-pulse" />}
+        {/* Status Display */}
+        <div className="w-[450px] bg-black/80 backdrop-blur-md rounded-2xl p-8 border-2 border-primary/50 flex flex-col items-center text-center shadow-[0_0_100px_rgba(255,191,0,0.2)]">
+          <div className="flex justify-between w-full mb-4 opacity-50 text-[10px] font-code tracking-[0.5em] font-black">
+             <div className="flex items-center gap-2">
+               <Zap className={cn("w-3 h-3", isActive && "text-primary animate-pulse")} />
+               MEGATRON_CORE_V5
+             </div>
+             <div className="flex items-center gap-2">
+               <AudioLines className={cn("w-3 h-3", clapDetected && "text-primary animate-bounce")} />
+               SENSOR_PALMAS
+             </div>
+          </div>
           
-          <p className="text-[14px] font-body text-primary leading-tight font-black tracking-tight drop-shadow-[0_0_5px_rgba(255,191,0,0.5)]">
+          <p className="text-xl font-body text-primary leading-tight font-black tracking-tight drop-shadow-[0_0_10px_rgba(255,191,0,0.4)] min-h-[60px] flex items-center">
             {transcript}
           </p>
 
-          {isListening && !isPlaying && (
-            <div className="absolute bottom-2 right-4 flex items-center gap-2">
-              <span className="text-[8px] font-code text-primary/80 font-black tracking-widest">OUVINDO...</span>
-              <div className="w-1.5 h-1.5 rounded-full bg-primary animate-ping" />
-            </div>
+          {/* Hidden/Subtle Script Input for "Text I will place" */}
+          {isActive && (
+            <form onSubmit={handleScriptSubmit} className="mt-6 w-full relative group/input">
+              <Terminal className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary/30" />
+              <Input 
+                value={scriptText}
+                onChange={(e) => setScriptText(e.target.value)}
+                placeholder="SCRIPT_VOZ_DIRETO..."
+                className="bg-primary/5 border-primary/20 text-primary placeholder:text-primary/10 font-code text-[11px] pl-10 h-10 rounded-lg focus-visible:ring-primary/40"
+              />
+            </form>
           )}
-        </div>
 
-        <div className="flex justify-between w-full text-[9px] font-code text-primary/50 uppercase tracking-[0.4em] font-black">
-          <span>MEGATRON_CORE_V4</span>
-          <span>RODRIGO_MEU_SENHOR</span>
+          <div className="mt-6 pt-4 border-t border-primary/20 w-full flex justify-between text-[10px] font-code text-primary/40 uppercase tracking-[0.3em] font-black">
+            <span>SOBERANO_RODRIGO</span>
+            <span>UPLINK_ATIVO</span>
+          </div>
         </div>
       </div>
     </div>

@@ -1,10 +1,10 @@
+
 "use client"
 
 import React, { useState } from 'react';
 import { KineticCore } from '@/components/aethel/KineticCore';
 import { TelemetryHUD } from '@/components/aethel/TelemetryHUD';
 import { VoiceLink } from '@/components/aethel/VoiceLink';
-import { CognitiveProcessor } from '@/components/aethel/CognitiveProcessor';
 import { Activity, Shield, Zap, Layers } from 'lucide-react';
 
 export default function Home() {
@@ -23,9 +23,6 @@ export default function Home() {
 
       {/* Persistent UI Overlays */}
       <TelemetryHUD />
-
-      {/* Cognitive Processor (Chat/Text-to-Voice) */}
-      <CognitiveProcessor onProcessingChange={setIsProcessing} />
 
       {/* System Quick Controls */}
       <div className="fixed bottom-36 left-1/2 -translate-x-1/2 z-40 flex gap-12 opacity-40 hover:opacity-100 transition-opacity duration-500 font-headline text-[10px] tracking-widest text-primary/80">
@@ -55,7 +52,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Voice Interactions */}
+      {/* Voice Interactions - Only Interaction Point */}
       <VoiceLink onProcessingChange={setIsProcessing} />
 
       {/* Corner Accents */}
