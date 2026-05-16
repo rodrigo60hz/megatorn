@@ -16,11 +16,12 @@ interface Message {
 
 export function CognitiveProcessor({ onProcessingChange }: { onProcessingChange: (val: boolean) => void }) {
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: 'Sistemas Megatron inicializados. Aguardando ordens, Comandante.', timestamp: new Date() }
+    { role: 'assistant', content: 'Sistemas Megatron em prontidão. Aguardando ordens, Rodrigo meu senhor.', timestamp: new Date() }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -46,10 +47,16 @@ export function CognitiveProcessor({ onProcessingChange }: { onProcessingChange:
         content: result.response, 
         timestamp: new Date() 
       }]);
+
+      if (result.audio) {
+        if (!audioRef.current) audioRef.current = new Audio();
+        audioRef.current.src = result.audio;
+        audioRef.current.play().catch(e => console.error("ERRO_VOZ_MEGATRON:", e));
+      }
     } catch (error) {
       setMessages(prev => [...prev, { 
         role: 'assistant', 
-        content: "Erro no link neural. Reinicie a transmissão.", 
+        content: "Rodrigo meu senhor, link neural instável. Repita o comando.", 
         timestamp: new Date() 
       }]);
     } finally {
@@ -62,7 +69,7 @@ export function CognitiveProcessor({ onProcessingChange }: { onProcessingChange:
     <div className="fixed bottom-24 right-8 w-96 h-[500px] z-50 flex flex-col border border-primary/20 hud-glass rounded-xl overflow-hidden animate-in slide-in-from-bottom duration-1000">
       <div className="p-4 border-b border-primary/20 flex items-center gap-3 bg-primary/5">
         <Terminal className="w-4 h-4 text-primary" />
-        <h2 className="text-xs font-headline font-bold tracking-widest text-primary">UPLINK NEURAL</h2>
+        <h2 className="text-xs font-headline font-bold tracking-widest text-primary">COMANDO_TEXTUAL</h2>
         <div className="ml-auto w-2 h-2 rounded-full bg-primary animate-pulse" />
       </div>
 
@@ -79,7 +86,7 @@ export function CognitiveProcessor({ onProcessingChange }: { onProcessingChange:
               <div className="flex items-center gap-2 mb-1">
                 {msg.role === 'assistant' ? <Bot className="w-3 h-3 opacity-50" /> : <User className="w-3 h-3 opacity-50" />}
                 <span className="text-[10px] font-code opacity-40 uppercase">
-                  {msg.role === 'assistant' ? 'MEGATRON' : 'USUÁRIO'}
+                  {msg.role === 'assistant' ? 'MEGATRON' : 'SOBERANO'}
                 </span>
               </div>
               <div className={cn(
@@ -107,7 +114,7 @@ export function CognitiveProcessor({ onProcessingChange }: { onProcessingChange:
           <Input 
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Enviar comando..."
+            placeholder="Digite para Megatron falar..."
             className="bg-black/50 border-primary/30 text-primary placeholder:text-primary/20 font-code text-xs pr-10 focus-visible:ring-primary/40 h-10"
           />
           <Button 

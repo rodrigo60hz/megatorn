@@ -1,10 +1,10 @@
-
 "use client"
 
 import React, { useState } from 'react';
 import { KineticCore } from '@/components/aethel/KineticCore';
 import { TelemetryHUD } from '@/components/aethel/TelemetryHUD';
 import { VoiceLink } from '@/components/aethel/VoiceLink';
+import { CognitiveProcessor } from '@/components/aethel/CognitiveProcessor';
 import { Activity, Shield, Zap, Layers } from 'lucide-react';
 
 export default function Home() {
@@ -13,7 +13,7 @@ export default function Home() {
   return (
     <main className="relative w-screen h-screen overflow-hidden scanline-effect select-none">
       {/* Background Ambience */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(56,189,248,0.05)_0%,transparent_70%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,191,0,0.05)_0%,transparent_70%)]" />
       <div className="absolute inset-0 digital-noise" />
 
       {/* Main Kinetic Hub */}
@@ -24,7 +24,10 @@ export default function Home() {
       {/* Persistent UI Overlays */}
       <TelemetryHUD />
 
-      {/* System Quick Controls (Floating Panels) */}
+      {/* Cognitive Processor (Chat/Text-to-Voice) */}
+      <CognitiveProcessor onProcessingChange={setIsProcessing} />
+
+      {/* System Quick Controls */}
       <div className="fixed bottom-36 left-1/2 -translate-x-1/2 z-40 flex gap-12 opacity-40 hover:opacity-100 transition-opacity duration-500 font-headline text-[10px] tracking-widest text-primary/80">
         <div className="flex flex-col items-center gap-2 group cursor-pointer">
           <div className="p-2 border border-primary/20 rounded-full group-hover:bg-primary/10 transition-colors">
@@ -52,7 +55,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Interactions */}
+      {/* Voice Interactions */}
       <VoiceLink onProcessingChange={setIsProcessing} />
 
       {/* Corner Accents */}
