@@ -2,7 +2,7 @@
 "use client"
 
 import React, { useState, useEffect } from 'react';
-import { Clock, Cpu, HardDrive, BrainCircuit, Activity, Zap, ShieldCheck } from 'lucide-react';
+import { Clock, Cpu, HardDrive, BrainCircuit, Activity, Zap, ShieldCheck, MonitorDown } from 'lucide-react';
 
 export function TelemetryHUD() {
   const [time, setTime] = useState<string>('--:--:--');
@@ -24,6 +24,7 @@ export function TelemetryHUD() {
 
   return (
     <>
+      {/* Esquerda: Status do Disco Físico A: */}
       <div className="fixed top-8 left-8 z-50 flex flex-col gap-6 font-code">
         <div className="flex items-center gap-5 text-primary animate-in slide-in-from-left duration-700">
           <div className="p-3 border-2 border-primary hud-glass rounded-sm shadow-[0_0_40px_rgba(255,191,0,0.6)] bg-primary/15">
@@ -67,6 +68,7 @@ export function TelemetryHUD() {
         </div>
       </div>
 
+      {/* Direita: Telemetria de CPU e Tempo */}
       <div className="fixed top-8 right-8 z-50 text-right animate-in slide-in-from-right duration-700 font-code">
         <div className="flex items-center gap-6 justify-end">
           <div className="text-right">
@@ -83,7 +85,7 @@ export function TelemetryHUD() {
             <Activity className="w-4 h-4 animate-pulse" /> SYSTEM_OFFLINE_OK
           </div>
           <div className="flex items-center gap-2">
-            <Zap className="w-4 h-4 text-secondary" /> POWERED_BY_A:
+            <MonitorDown className="w-4 h-4 text-secondary" /> PROGRAMA_INSTALADO
           </div>
         </div>
       </div>
