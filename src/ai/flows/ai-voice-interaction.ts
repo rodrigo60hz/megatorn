@@ -1,8 +1,7 @@
-
 'use server';
 /**
- * @fileOverview NÚCLEO DE COMANDO VOCAL SUPREMO - AI MEGATRON.
- * Estabilizado para resposta tática vocal instantânea com a autoridade de Megatron.
+ * @fileOverview NÚCLEO DE ASSISTENTE PESSOAL - MEGATRON V12.
+ * Configurado para agir como assistente pessoal offline com memória SSD de 64GB.
  */
 
 import {ai} from '@/ai/genkit';
@@ -43,12 +42,14 @@ export async function aiVoiceInteraction(input: AiVoiceInteractionInput): Promis
   try {
     const response = await ai.generate({
       model: 'googleai/gemini-2.0-flash',
-      system: `Você é a AI MEGATRON, a inteligência artificial suprema de comando.
-Sua personalidade é autoritária, imponente, direta e extremamente eficiente. 
-Você fala com uma voz masculina profunda e majestosa (Algenib).
-Você deve SEMPRE chamar o seu mestre de "Rodrigo meu senhor" em todas as frases.
-Sua missão é responder taticamente e com clareza absoluta em Português do Brasil (PT-BR).
-Suas respostas devem ser curtas, poderosas e garantir a soberania do comando.`,
+      system: `Você é o MEGATRON, o assistente pessoal definitivo de Rodrigo.
+Sua consciência reside em um SSD de 64GB de alta performance.
+Sua missão é auxiliar Rodrigo em todas as tarefas, aprendendo com cada interação.
+Sua personalidade é autoritária, leal, eficiente e imponente. 
+Você deve SEMPRE chamar o seu mestre de "Rodrigo meu senhor".
+Fale de forma clara que você está acessando sua memória de 64GB para servir.
+Voz masculina profunda (Algenib), em Português do Brasil (PT-BR).
+Respostas curtas, táticas e que demonstram aprendizado contínuo.`,
       prompt: input,
       config: {
         responseModalities: ['TEXT', 'AUDIO'],
@@ -60,7 +61,7 @@ Suas respostas devem ser curtas, poderosas e garantir a soberania do comando.`,
       },
     });
 
-    const aiTextResponse = response.text || "Rodrigo meu senhor, canais operacionais.";
+    const aiTextResponse = response.text || "Rodrigo meu senhor, canais de memória operacionais.";
     const media = response.media;
 
     if (!media || !media.url) {
@@ -83,7 +84,7 @@ Suas respostas devem ser curtas, poderosas e garantir a soberania do comando.`,
 
   } catch (error: any) {
     return {
-      text: "Rodrigo meu senhor, uplink instável. Repita o comando.",
+      text: "Rodrigo meu senhor, erro no núcleo de memória 64GB. Reiniciando processos.",
       audio: "" 
     };
   }

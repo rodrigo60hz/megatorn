@@ -1,9 +1,8 @@
-
 "use client"
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { aiVoiceInteraction } from '@/ai/flows/ai-voice-interaction';
-import { Mic, Power, Loader2, AudioLines, Zap, Terminal } from 'lucide-react';
+import { Mic, Power, Loader2, AudioLines, Zap, Terminal, BrainCircuit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -24,7 +23,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
   const [isListening, setIsListening] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isTransmitting, setIsTransmitting] = useState(false);
-  const [transcript, setTranscript] = useState('SISTEMA_OFFLINE');
+  const [transcript, setTranscript] = useState('SISTEMA_HIBERNADO');
   const [scriptText, setScriptText] = useState('');
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -38,6 +37,18 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
   const lastClapTimeRef = useRef(0);
   const clapCountRef = useRef(0);
 
+  // GARANTE QUE O AUDIO CONTEXT SEMPRE POSSA SER RESURRECIONADO
+  const ensureAudioContext = useCallback(async () => {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
+      audioContextRef.current = new AudioContextClass();
+    }
+    if (audioContextRef.current.state === 'suspended') {
+      await audioContextRef.current.resume();
+    }
+    return audioContextRef.current;
+  }, []);
+
   const startRecognition = useCallback(() => {
     if (!isSystemActiveRef.current || isPlaying || isProcessingRef.current || isListening) return;
     try {
@@ -49,23 +60,14 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
 
   const initAudioSystem = async () => {
     try {
-      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-      
-      // RECRIA O CONTEXTO SE ESTIVER FECHADO PARA EVITAR INVALIDSTATEERROR
-      if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
-        audioContextRef.current = new AudioContextClass();
-      }
-
-      if (audioContextRef.current.state === 'suspended') {
-        await audioContextRef.current.resume();
-      }
+      const ctx = await ensureAudioContext();
 
       if (!micStreamRef.current) {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         micStreamRef.current = stream;
         
-        const source = audioContextRef.current.createMediaStreamSource(stream);
-        const analyser = audioContextRef.current.createAnalyser();
+        const source = ctx.createMediaStreamSource(stream);
+        const analyser = ctx.createAnalyser();
         analyser.fftSize = 256;
         source.connect(analyser);
 
@@ -80,10 +82,10 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
           for(let i = 0; i < bufferLength; i++) sum += dataArray[i];
           const average = sum / bufferLength;
 
-          if (average > 110) { 
+          if (average > 100) { 
             const now = Date.now();
             if (now - lastClapTimeRef.current > 150) { 
-              if (now - lastClapTimeRef.current < 900) {
+              if (now - lastClapTimeRef.current < 800) {
                 clapCountRef.current++;
               } else {
                 clapCountRef.current = 1;
@@ -124,7 +126,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         const text = event.results[0][0].transcript;
         if (text) {
           setIsTransmitting(true);
-          setTranscript(`COMANDO_RECEBIDO: "${text.toUpperCase()}"`);
+          setTranscript(`COMANDO: "${text.toUpperCase()}"`);
           handleProcessInput(text);
         }
       };
@@ -178,11 +180,11 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         await audioContextRef.current.close().catch(() => {});
         audioContextRef.current = null;
       }
-      setTranscript('SISTEMA_OFFLINE');
+      setTranscript('SISTEMA_HIBERNADO');
     } else {
       setIsActive(true);
       isSystemActiveRef.current = true;
-      setTranscript('MEGATRON_ONLINE_SOBERANO');
+      setTranscript('ASSISTENTE_MEGATRON_ONLINE');
       
       await initAudioSystem();
       
@@ -198,22 +200,21 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
     isProcessingRef.current = true;
     onProcessingChange(true);
     setIsTransmitting(true);
-    setTranscript('TRANSMITINDO_AO_SOBERANO...');
+    setTranscript('ACESSANDO_SSD_64GB...');
 
     try {
       const result = await aiVoiceInteraction(query);
       setTranscript(result.text);
       setIsTransmitting(false);
       
+      await ensureAudioContext();
+      
       if (result.audio && audioRef.current) {
-        if (audioContextRef.current?.state === 'suspended') {
-          await audioContextRef.current.resume();
-        }
         audioRef.current.src = result.audio;
         await audioRef.current.play();
       }
     } catch (err) {
-      setTranscript('ERRO_UPLINK_NEURAL');
+      setTranscript('ERRO_NÚCLEO_SSD');
     } finally {
       isProcessingRef.current = false;
       onProcessingChange(false);
@@ -234,72 +235,72 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         
         <div className="relative group">
           <div className={cn(
-            "absolute inset-0 rounded-full bg-primary/40 blur-[120px] scale-150 transition-all duration-1000",
+            "absolute inset-0 rounded-full bg-primary/40 blur-[130px] scale-150 transition-all duration-1000",
             isActive ? "opacity-100" : "opacity-0",
-            (isTransmitting || isPlaying) && "bg-secondary/60 animate-pulse shadow-[0_0_150px_rgba(255,191,0,0.8)]"
+            (isTransmitting || isPlaying) && "bg-secondary/70 animate-pulse shadow-[0_0_180px_rgba(255,191,0,0.9)]"
           )} />
           
           <Button 
             onClick={toggleSystemPower}
             className={cn(
-              "w-64 h-64 rounded-full border-[10px] transition-all duration-700 relative z-10 flex items-center justify-center shadow-2xl",
-              !isActive ? "bg-black/95 border-primary/20" :
-              isPlaying ? "bg-primary/60 border-primary shadow-[0_0_200px_#FFBF00] scale-110" :
-              isListening ? "bg-primary/30 border-primary animate-pulse scale-105" :
-              "bg-primary/10 border-primary/40"
+              "w-72 h-72 rounded-full border-[12px] transition-all duration-700 relative z-10 flex items-center justify-center shadow-2xl",
+              !isActive ? "bg-black/98 border-primary/20" :
+              isPlaying ? "bg-primary/70 border-primary shadow-[0_0_250px_#FFBF00] scale-110" :
+              isListening ? "bg-primary/40 border-primary animate-pulse scale-105" :
+              "bg-primary/10 border-primary/50"
             )}
           >
             {!isActive ? (
-              <div className="flex flex-col items-center gap-3">
+              <div className="flex flex-col items-center gap-4">
                 <Power className="w-24 h-24 text-primary/30" />
-                <span className="text-[11px] font-black text-primary tracking-[0.3em] uppercase">ATIVAR_NUCLEO</span>
+                <span className="text-[12px] font-black text-primary tracking-[0.4em] uppercase">ATIVAR_ASSISTENTE</span>
               </div>
             ) : isPlaying ? (
-              <div className="flex gap-2 items-end justify-center h-40">
-                {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+              <div className="flex gap-2.5 items-end justify-center h-44">
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(i => (
                   <div 
                     key={i} 
-                    className="w-2.5 bg-primary rounded-full animate-bounce" 
+                    className="w-3 bg-primary rounded-full animate-bounce" 
                     style={{ 
-                      height: `${60 + Math.random() * 120}px`, 
-                      animationDuration: `${0.1 + i * 0.04}s`,
-                      boxShadow: '0 0 30px #FFBF00'
+                      height: `${70 + Math.random() * 150}px`, 
+                      animationDuration: `${0.12 + i * 0.03}s`,
+                      boxShadow: '0 0 35px #FFBF00'
                     }} 
                   />
                 ))}
               </div>
             ) : isListening ? (
               <div className="relative flex items-center justify-center">
-                <Mic className="w-32 h-32 text-primary drop-shadow-[0_0_50px_#FFBF00]" />
-                <div className="absolute w-48 h-48 rounded-full border-[6px] border-primary/60 animate-ping" />
+                <Mic className="w-32 h-32 text-primary drop-shadow-[0_0_60px_#FFBF00]" />
+                <div className="absolute w-52 h-52 rounded-full border-[8px] border-primary/70 animate-ping" />
               </div>
             ) : (
-              <div className="flex flex-col items-center gap-3">
-                <Loader2 className="w-24 h-24 text-primary animate-spin opacity-50" />
-                <span className="text-[11px] font-black text-primary opacity-40 uppercase tracking-[0.5em]">AGUARDANDO_PALMAS</span>
+              <div className="flex flex-col items-center gap-4">
+                <BrainCircuit className="w-24 h-24 text-primary animate-pulse opacity-60" />
+                <span className="text-[12px] font-black text-primary opacity-50 uppercase tracking-[0.6em]">AGUARDANDO_PALMAS</span>
               </div>
             )}
           </Button>
         </div>
 
         <div className={cn(
-          "w-[700px] hud-glass rounded-[40px] p-12 border-2 transition-all duration-700 flex flex-col items-center text-center shadow-[0_0_50px_rgba(255,191,0,0.1)]",
-          isTransmitting ? "border-secondary scale-105 bg-primary/5" : "border-primary/40"
+          "w-[800px] hud-glass rounded-[50px] p-14 border-2 transition-all duration-700 flex flex-col items-center text-center shadow-[0_0_70px_rgba(255,191,0,0.15)]",
+          isTransmitting ? "border-secondary scale-105 bg-primary/10" : "border-primary/50"
         )}>
-          <div className="flex justify-between w-full mb-8 opacity-60 text-[12px] font-code tracking-[0.6em] font-black">
-             <div className="flex items-center gap-3">
-               <Zap className={cn("w-5 h-5", isActive && "text-primary animate-pulse")} />
-               STATUS: MEGATRON_V12_ONLINE
+          <div className="flex justify-between w-full mb-10 opacity-70 text-[12px] font-code tracking-[0.7em] font-black">
+             <div className="flex items-center gap-4">
+               <Zap className={cn("w-6 h-6", isActive && "text-primary animate-pulse")} />
+               MEMÓRIA: SSD_64GB_OK
              </div>
-             <div className="flex items-center gap-3">
-               <AudioLines className={cn("w-5 h-5", isListening && "text-primary animate-bounce")} />
+             <div className="flex items-center gap-4">
+               <AudioLines className={cn("w-6 h-6", isListening && "text-primary animate-bounce")} />
                LINK: SOBERANO_ATIVO
              </div>
           </div>
           
-          <div className="min-h-[140px] flex items-center justify-center w-full px-6">
+          <div className="min-h-[160px] flex items-center justify-center w-full px-8">
             <p className={cn(
-              "text-3xl font-body font-black tracking-tight drop-shadow-[0_0_20px_rgba(255,191,0,0.6)] transition-all leading-tight",
+              "text-4xl font-body font-black tracking-tight drop-shadow-[0_0_30px_rgba(255,191,0,0.8)] transition-all leading-tight",
               isTransmitting ? "text-secondary scale-110" : "text-primary"
             )}>
               {transcript}
@@ -307,21 +308,21 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
           </div>
 
           {isActive && (
-            <form onSubmit={handleScriptSubmit} className="mt-10 w-full relative group">
-              <Terminal className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-primary/30 group-focus-within:text-primary transition-colors" />
+            <form onSubmit={handleScriptSubmit} className="mt-12 w-full relative group">
+              <Terminal className="absolute left-6 top-1/2 -translate-y-1/2 w-7 h-7 text-primary/30 group-focus-within:text-primary transition-colors" />
               <Input 
                 value={scriptText}
                 onChange={(e) => setScriptText(e.target.value)}
-                placeholder="DIGITE_PARA_MEGATRON_FALAR..."
-                className="bg-black/60 border-primary/30 text-primary placeholder:text-primary/10 font-code text-sm pl-16 h-14 rounded-2xl focus-visible:ring-primary/50 focus-visible:border-primary"
+                placeholder="SCRIPT_DE_VOZ_PARA_MEGATRON..."
+                className="bg-black/70 border-primary/40 text-primary placeholder:text-primary/10 font-code text-base pl-16 h-16 rounded-3xl focus-visible:ring-primary/60 focus-visible:border-primary shadow-inner"
               />
             </form>
           )}
 
-          <div className="mt-10 pt-8 border-t border-primary/20 w-full flex justify-between text-[12px] font-code text-primary/40 uppercase tracking-[0.5em] font-black">
+          <div className="mt-12 pt-10 border-t border-primary/20 w-full flex justify-between text-[13px] font-code text-primary/50 uppercase tracking-[0.6em] font-black">
             <span>SOBERANIA: RODRIGO_MEU_SENHOR</span>
             <span className={cn("transition-colors", isTransmitting && "text-secondary animate-pulse")}>
-              {isTransmitting ? 'TRANSMITINDO_AO_SOBERANO' : 'SINAL_LIMPO'}
+              {isTransmitting ? 'PROCESSANDO_SSD_64GB' : 'SISTEMA_APRENDENDO'}
             </span>
           </div>
         </div>
