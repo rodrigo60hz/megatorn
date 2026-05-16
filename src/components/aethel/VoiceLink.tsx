@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { aiVoiceInteraction } from '@/ai/flows/ai-voice-interaction';
-import { Mic, Radio, Loader2, Power, Volume2, ShieldCheck, Zap, LockOpen } from 'lucide-react';
+import { Mic, Radio, Loader2, Power, Volume2, Zap, LockOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -13,11 +13,14 @@ declare global {
   }
 }
 
+// Áudio de silêncio estruturado para desbloqueio de driver do navegador
+const SILENCE_WAV = "data:audio/wav;base64,UklGRigAAABXQVZFRm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YQQAAAAEAA==";
+
 export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: boolean) => void }) {
   const [isActive, setIsActive] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [transcript, setTranscript] = useState('SISTEMA_EM_ESPERA');
+  const [transcript, setTranscript] = useState('SISTEMA_MARIA_EM_ESPERA');
   const [hasPermission, setHasPermission] = useState(false);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -26,7 +29,6 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
   const isProcessingRef = useRef(false);
   const restartTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Inicialização Robusta do Reconhecimento
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
@@ -37,17 +39,15 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
 
       recognition.onstart = () => {
         setIsListening(true);
-        setTranscript('MEGATRON_OUVINDO...');
+        setTranscript('MARIA_OUVINDO_COMANDO...');
       };
 
       recognition.onresult = (event: any) => {
         const text = event.results[0][0].transcript;
-        if (text) {
-          handleProcessVoice(text);
-        }
+        if (text) handleProcessVoice(text);
       };
 
-      recognition.onerror = (event: any) => {
+      recognition.onerror = () => {
         setIsListening(false);
         if (isSystemActiveRef.current && !isPlaying && !isProcessingRef.current) attemptRestart();
       };
@@ -65,14 +65,12 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       audio.onplay = () => {
         setIsPlaying(true);
         setIsListening(false);
-        recognitionRef.current?.stop();
+        try { recognitionRef.current?.stop(); } catch (e) {}
       };
       audio.onpause = () => setIsPlaying(false);
       audio.onended = () => {
         setIsPlaying(false);
-        if (isSystemActiveRef.current) {
-          attemptRestart();
-        }
+        if (isSystemActiveRef.current) attemptRestart();
       };
       audioRef.current = audio;
     }
@@ -90,9 +88,9 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         try {
           recognitionRef.current?.start();
         } catch (e) {
-          // Já ativo ou erro de concorrência silencioso
+          // Já em execução ou erro silencioso
         }
-      }, 500); 
+      }, 400); 
     }
   };
 
@@ -106,21 +104,19 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         audioRef.current.src = "";
       }
       setIsPlaying(false);
-      setTranscript('MEGATRON_DESATIVADO');
+      setTranscript('MARIA_OFFLINE');
     } else {
       setIsActive(true);
       setHasPermission(true);
       isSystemActiveRef.current = true;
-      setTranscript('LINK_NEURAL_ONLINE');
+      setTranscript('LINK_MARIA_ESTABELECIDO');
       
-      // DESBLOQUEIO AGRESSIVO DE ÁUDIO
+      // DESBLOQUEIO DE ÁUDIO RECALIBRADO
       if (audioRef.current) {
-        audioRef.current.src = "data:audio/wav;base64,UklGRiQAAABXQVZFRm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YQAAAAA="; 
-        audioRef.current.play().then(() => {
-          console.log("DRIVER_AUDIO_DESBLOQUEADO");
-        }).catch(() => {
-          console.error("FALHA_CRITICA_AUDIO");
-        });
+        audioRef.current.src = SILENCE_WAV;
+        audioRef.current.play()
+          .then(() => console.log("DRIVER_AUDIO_UNLOCKED"))
+          .catch(() => console.warn("DRIVER_AUDIO_BUSY_BUT_LINKED"));
       }
       
       setTimeout(() => attemptRestart(), 500);
@@ -131,8 +127,8 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
     isProcessingRef.current = true;
     onProcessingChange(true);
     setIsListening(false);
-    recognitionRef.current?.stop();
-    setTranscript('PROCESSANDO_COMANDO...');
+    try { recognitionRef.current?.stop(); } catch (e) {}
+    setTranscript('MARIA_CALCULANDO...');
 
     try {
       const result = await aiVoiceInteraction(query);
@@ -141,10 +137,8 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       if (result.audio && audioRef.current) {
         audioRef.current.src = result.audio;
         const playPromise = audioRef.current.play();
-        
         if (playPromise !== undefined) {
-          playPromise.catch((e) => {
-            console.error("ERRO_ALMA_VOCAL", e);
+          playPromise.catch(() => {
             setIsPlaying(false);
             isProcessingRef.current = false;
             attemptRestart();
@@ -170,7 +164,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
           <div className="flex items-center gap-2">
             <Zap className={cn("w-3 h-3 transition-all", isActive ? "text-primary animate-pulse" : "text-primary/20")} />
             <span className="text-[11px] font-headline font-bold text-primary tracking-[0.3em] uppercase">
-              {isActive ? "PERMISSÃO_CONCEDIDA" : "NÚCLEO_BLOQUEADO"}
+              {isActive ? "COMANDO_LIBERADO" : "SISTEMA_TRAVADO"}
             </span>
           </div>
           <div className="flex gap-3">
@@ -198,7 +192,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
             {!isActive ? (
               <div className="flex flex-col items-center gap-2">
                 <Power className="w-16 h-16 text-primary/40" />
-                <span className="text-[8px] font-black text-primary animate-pulse">ATIVAR LINK</span>
+                <span className="text-[8px] font-black text-primary animate-pulse">LIGAR MARIA</span>
               </div>
             ) : isPlaying ? (
               <div className="flex gap-1.5 items-center justify-center h-full">
@@ -229,21 +223,21 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
           {isActive && <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary to-transparent animate-pulse" />}
           
           <p className="text-[14px] font-body text-primary leading-tight font-black tracking-tight drop-shadow-[0_0_5px_rgba(255,191,0,0.5)]">
-            {isPlaying && <span className="text-[9px] opacity-70 block mb-1 uppercase tracking-[0.4em] animate-pulse">Transmitindo Frequência Achernar...</span>}
+            {isPlaying && <span className="text-[9px] opacity-70 block mb-1 uppercase tracking-[0.4em] animate-pulse">Maria Transmitindo...</span>}
             {transcript}
           </p>
 
           {isListening && !isPlaying && (
             <div className="absolute bottom-2 right-4 flex items-center gap-2">
-              <span className="text-[8px] font-code text-primary/80 font-black tracking-widest">SINAL_RODRIGO...</span>
+              <span className="text-[8px] font-code text-primary/80 font-black tracking-widest">OUVINDO_RODRIGO...</span>
               <div className="w-1.5 h-1.5 rounded-full bg-primary animate-ping" />
             </div>
           )}
         </div>
 
         <div className="flex justify-between w-full text-[9px] font-code text-primary/50 uppercase tracking-[0.4em] font-black">
-          <span>SINAL_ULTRA_ACTV</span>
-          <span className="flex items-center gap-2">LINK_INFINITO <div className="w-1 h-1 rounded-full bg-primary animate-pulse" /></span>
+          <span>MARIA_VOTZ_ACTV</span>
+          <span className="flex items-center gap-2">RODRIGO_MEU_SENHOR <div className="w-1 h-1 rounded-full bg-primary animate-pulse" /></span>
         </div>
       </div>
     </div>

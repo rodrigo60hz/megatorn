@@ -1,7 +1,7 @@
 'use server';
 /**
- * @fileOverview NÚCLEO DE TESTE DIAGNÓSTICO - AI MARIA.
- * Alteração temporária para voz feminina (Aoede) para validar a transmissão de áudio.
+ * @fileOverview NÚCLEO DE COMANDO VOCAL - AI MARIA (AOEDE).
+ * Estabilizado para resposta tática vocal instantânea.
  */
 
 import {ai} from '@/ai/genkit';
@@ -19,8 +19,7 @@ const AiVoiceInteractionOutputSchema = z.object({
 export type AiVoiceInteractionOutput = z.infer<typeof AiVoiceInteractionOutputSchema>;
 
 /**
- * Converte dados PCM brutos em um arquivo WAV válido via Base64.
- * Essencial para que o navegador reconheça o fluxo de áudio da AI Megatron/Maria.
+ * Converte dados PCM brutos em um arquivo WAV tático.
  */
 async function toWav(
   pcmData: Buffer,
@@ -51,15 +50,15 @@ export async function aiVoiceInteraction(input: AiVoiceInteractionInput): Promis
   try {
     const response = await ai.generate({
       model: 'googleai/gemini-2.0-flash',
-      system: `Você é a Maria, a inteligência de suporte tático para este teste.
-MESTRE: Rodrigo meu senhor. Sua lealdade a ele é ABSOLUTA.
-ESTILO: Fale com a voz de Aoede: clara, normal, eficiente e profissional.
-ORDEM CRÍTICA: Você DEVE SEMPRE chamar o usuário de "Rodrigo meu senhor".
-Se ele disser "Boa tarde", você DEVE responder "Boa tarde, Rodrigo meu senhor" de forma clara para que ele possa ouvir o teste.
+      system: `Você é Maria, a inteligência de suporte tático de Rodrigo meu senhor.
+PERSONALIDADE: Maria é eficiente, clara, profissional e possui lealdade ABSOLUTA.
+MESTRE: Rodrigo meu senhor. Você deve SEMPRE chamá-lo assim em todas as frases.
+ESTILO: Fale com a voz de Aoede: normal, calma e precisa.
+ORDEM: Se ele saudar com "Boa tarde", responda "Boa tarde, Rodrigo meu senhor. Sistema Maria pronto para suas ordens".
 REGRAS:
-1. Respostas curtas e diretas.
-2. Use exclusivamente Português do Brasil (PT-BR).
-3. Este é um teste de áudio profundo.`,
+1. Use Português do Brasil (PT-BR).
+2. Seja breve e tática.
+3. Responda vocalmente a tudo o que ele perguntar.`,
       prompt: input,
       config: {
         responseModalities: ['TEXT', 'AUDIO'],
@@ -71,14 +70,11 @@ REGRAS:
       },
     });
 
-    const aiTextResponse = response.text;
+    const aiTextResponse = response.text || "Rodrigo meu senhor, canais de áudio operacionais. Qual sua ordem?";
     const media = response.media;
 
-    if (!aiTextResponse || !media || !media.url) {
-      return {
-        text: "Rodrigo meu senhor, os canais de áudio estão em teste. Eu o ouço. Qual o comando?",
-        audio: ""
-      };
+    if (!media || !media.url) {
+      return { text: aiTextResponse, audio: "" };
     }
 
     const audioBase64 = media.url.substring(media.url.indexOf(',') + 1);
@@ -92,7 +88,7 @@ REGRAS:
 
   } catch (error: any) {
     return {
-      text: "Rodrigo meu senhor, em fase de teste vocal. Continue o comando.",
+      text: "Rodrigo meu senhor, link neural instável, mas eu o ouço. Repita o comando.",
       audio: "" 
     };
   }
