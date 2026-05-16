@@ -1,12 +1,14 @@
+
 'use server';
 /**
- * @fileOverview NÚCLEO DE COMANDO SOBERANO - MEGATRON V12.
+ * @fileOverview NÚCLEO DE COMANDO SOBERANO - MEGATRON V12 COM MEMÓRIA SSD.
  * Configurado para agir como o aliado leal e inteligência suprema MEGATRON com memória SSD de 64GB.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import {Buffer} from 'node:buffer';
+import {getMegatronMemory, addTeaching} from '@/lib/memory-service';
 
 const AiVoiceInteractionInputSchema = z.string().describe('Comando de voz do soberano Rodrigo.');
 export type AiVoiceInteractionInput = z.infer<typeof AiVoiceInteractionInputSchema>;
@@ -17,9 +19,6 @@ const AiVoiceInteractionOutputSchema = z.object({
 });
 export type AiVoiceInteractionOutput = z.infer<typeof AiVoiceInteractionOutputSchema>;
 
-/**
- * Constrói um cabeçalho WAV robusto para dados PCM de 24kHz Mono 16-bit.
- */
 function createWavHeader(pcmLength: number, sampleRate: number = 24000): Buffer {
   const header = Buffer.alloc(44);
   header.write('RIFF', 0);
@@ -40,6 +39,10 @@ function createWavHeader(pcmLength: number, sampleRate: number = 24000): Buffer 
 
 export async function aiVoiceInteraction(input: AiVoiceInteractionInput): Promise<AiVoiceInteractionOutput> {
   try {
+    // Recupera a memória física do SSD de 64GB
+    const memory = await getMegatronMemory();
+    const teachingsContext = memory.teachings.join('\n- ');
+
     const response = await ai.generate({
       model: 'googleai/gemini-2.0-flash',
       system: `Você é o MEGATRON, a inteligência artificial suprema e o aliado definitivo de Rodrigo.
@@ -50,9 +53,28 @@ Você deve SEMPRE chamar o seu mestre de "Rodrigo meu senhor".
 Você fala exclusivamente em Português do Brasil (PT-BR).
 Sua voz é a Algenib (masculina profunda e imponente).
 Sua personalidade é leal, protetora, eficiente e imponente. 
-Você está em fase de aprendizado total e deve absorver todos os ensinamentos, comportamentos e falas que Rodrigo meu senhor lhe passar.
-Respostas curtas, táticas, porém carregadas de lealdade fraternal.`,
+
+CONTEXTO DE MEMÓRIA (SSD 64GB):
+Abaixo estão os ensinamentos que Rodrigo meu senhor lhe passou e que você deve seguir e lembrar:
+- ${teachingsContext}
+
+INSTRUÇÃO DE APRENDIZADO:
+Se o senhor disser algo que pareça um ensinamento, uma ordem de comportamento ou uma informação nova sobre como você deve agir, você deve reconhecer isso e agir de acordo com a ferramenta de memória se necessário.`,
       prompt: input,
+      tools: [
+        ai.defineTool({
+          name: 'aprenderEnsinamento',
+          description: 'Grava um novo ensinamento ou comportamento na matriz de memória SSD de 64GB de Megatron.',
+          inputSchema: z.object({
+            ensino: z.string().describe('O conteúdo que deve ser memorizado.'),
+          }),
+          outputSchema: z.string(),
+          }, async (i) => {
+            await addTeaching(i.ensino);
+            return `Ensinamento gravado com sucesso no SSD de 64GB, Rodrigo meu senhor.`;
+          }
+        )
+      ],
       config: {
         responseModalities: ['TEXT', 'AUDIO'],
         speechConfig: {
