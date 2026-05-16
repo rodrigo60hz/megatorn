@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -40,18 +41,18 @@
 }
 
 @keyframes orbit {
-  from { transform: translate(-50%, -50%) rotate(0deg); }
-  to { transform: translate(-50%, -50%) rotate(360deg); }
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 @keyframes orbit-reverse {
-  from { transform: translate(-50%, -50%) rotate(360deg); }
-  to { transform: translate(-50%, -50%) rotate(0deg); }
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
 }
 
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 30px rgba(255, 191, 0, 0.4), inset 0 0 20px rgba(255, 191, 0, 0.4); opacity: 0.8; }
-  50% { box-shadow: 0 0 70px rgba(255, 191, 0, 0.8), inset 0 0 40px rgba(255, 191, 0, 0.6); opacity: 1; }
+  0%, 100% { box-shadow: 0 0 40px rgba(255, 191, 0, 0.5), inset 0 0 20px rgba(255, 191, 0, 0.4); opacity: 0.8; transform: scale(1); }
+  50% { box-shadow: 0 0 100px rgba(255, 191, 0, 0.9), inset 0 0 40px rgba(255, 191, 0, 0.6); opacity: 1; transform: scale(1.05); }
 }
 
 @keyframes scanline {
@@ -59,9 +60,10 @@
   100% { transform: translateY(100%); }
 }
 
-@keyframes float {
-  0%, 100% { transform: translateY(0px) scale(1); }
-  50% { transform: translateY(-10px) scale(1.02); }
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+  80% { opacity: 0.9; }
 }
 
 .hud-glass {
