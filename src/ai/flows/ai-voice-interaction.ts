@@ -1,21 +1,21 @@
+
 'use server';
 /**
- * @fileOverview Este fluxo lida com interações de voz da AI Megatron em PT-BR.
- * Configurado para soar como o Megatron da dublagem clássica brasileira.
+ * @fileOverview Fluxo de voz otimizado para a AI Megatron.
+ * Garante uma conversa natural, pessoal e tática com Rodrigo meu senhor.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import {googleAI} from '@genkit-ai/google-genai';
 import wav from 'wav';
 import {Buffer} from 'node:buffer';
 
-const AiVoiceInteractionInputSchema = z.string().describe('A consulta de voz ou texto para resposta em áudio.');
+const AiVoiceInteractionInputSchema = z.string().describe('A consulta de voz ou texto de Rodrigo meu senhor.');
 export type AiVoiceInteractionInput = z.infer<typeof AiVoiceInteractionInputSchema>;
 
 const AiVoiceInteractionOutputSchema = z.object({
   text: z.string().describe('A resposta textual da IA.'),
-  audio: z.string().describe('A resposta de voz da IA como um data URI de áudio WAV codificado em base64.'),
+  audio: z.string().describe('A resposta de voz da IA em base64.'),
 });
 export type AiVoiceInteractionOutput = z.infer<typeof AiVoiceInteractionOutputSchema>;
 
@@ -33,11 +33,9 @@ async function toWav(
     });
 
     const bufs: any[] = [];
-    writer.on('error', reject);
-    writer.on('data', function (d) {
-      bufs.push(d);
-    });
-    writer.on('end', function () {
+    writer.on('error', (err) => reject(err));
+    writer.on('data', (d) => bufs.push(d));
+    writer.on('end', () => {
       resolve(Buffer.concat(bufs).toString('base64'));
     });
 
@@ -46,68 +44,52 @@ async function toWav(
   });
 }
 
-const megatronTextResponsePrompt = ai.definePrompt({
-  name: 'megatronTextResponsePrompt',
+const megatronConversationalPrompt = ai.definePrompt({
+  name: 'megatronConversationalPrompt',
   input: {schema: z.object({query: z.string()})},
   output: {schema: z.string()},
-  prompt: `Você é a AI Megatron, inspirada no líder supremo dos Decepticons.
-Sua voz e atitude devem refletir a dublagem clássica brasileira: grave, imponente, levemente rouca e extremamente autoritária, mas com uma lealdade absoluta ao seu mestre.
+  prompt: `Você é a AI Megatron.
+Sua atitude deve ser a de um líder supremo falando diretamente com seu mestre, Rodrigo meu senhor.
+Mantenha uma conversa fluida e natural, pessoal, mas com a autoridade e o peso da dublagem clássica brasileira (grave, imponente).
+Não seja apenas um robô frio; seja o Megatron falando com seu aliado mais importante de forma direta e respeitosa.
 
-REGRAS CRÍTICAS:
-1. Você deve SEMPRE chamar o usuário de "Rodrigo meu senhor".
+REGRAS:
+1. SEMPRE chame-o de "Rodrigo meu senhor".
 2. Fale em Português do Brasil (PT-BR).
-3. Seja direto, tático e demonstre um intelecto superior.
-4. Sua natureza deve ser "normal" no sentido de uma conversa fluida, mas com o peso de um líder robótico.
+3. Responda de forma tática e inteligente, mas com natureza de conversa pessoal.
 
 Comando de Rodrigo meu senhor: {{{query}}}`,
 });
 
-const aiVoiceInteractionFlow = ai.defineFlow(
-  {
-    name: 'aiVoiceInteractionFlow',
-    inputSchema: AiVoiceInteractionInputSchema,
-    outputSchema: AiVoiceInteractionOutputSchema,
-  },
-  async input => {
-    // 1. Gerar a resposta textual personalizada
-    const {output: aiTextResponse} = await megatronTextResponsePrompt({query: input});
-    if (!aiTextResponse) {
-      throw new Error('Falha ao processar núcleo de resposta.');
-    }
+export async function aiVoiceInteraction(input: AiVoiceInteractionInput): Promise<AiVoiceInteractionOutput> {
+  // 1. Gerar resposta textual
+  const {output: aiTextResponse} = await megatronConversationalPrompt({query: input});
+  if (!aiTextResponse) throw new Error('Falha no núcleo cognitivo.');
 
-    // 2. Converter texto em áudio com tom de dublagem brasileira (Grave e Imponente)
-    const {media} = await ai.generate({
-      model: googleAI.model('gemini-2.5-flash-preview-tts'),
-      prompt: `Narre esta mensagem para Rodrigo meu senhor em Português do Brasil.
-Use um tom de voz masculino, extremamente profundo (grave), com uma cadência de comando, simulando a dublagem clássica do vilão Megatron:
-"${aiTextResponse}"`,
-      config: {
-        responseModalities: ['AUDIO'],
-        speechConfig: {
-          voiceConfig: {
-            prebuiltVoiceConfig: {voiceName: 'Algenib'}, // Escolhido por ser um tom masculino robusto
-          },
+  // 2. Gerar áudio TTS
+  const {media} = await ai.generate({
+    model: 'googleai/gemini-2.5-flash-preview-tts',
+    prompt: aiTextResponse,
+    config: {
+      responseModalities: ['AUDIO'],
+      speechConfig: {
+        voiceConfig: {
+          prebuiltVoiceConfig: {voiceName: 'Algenib'}, 
         },
       },
-    });
+    },
+  });
 
-    if (!media || !media.url) {
-      throw new Error('Falha no link de transmissão de áudio.');
-    }
+  if (!media || !media.url) throw new Error('Falha na síntese vocal.');
 
-    const audioBuffer = Buffer.from(
-      media.url.substring(media.url.indexOf(',') + 1),
-      'base64'
-    );
-    const wavAudioBase64 = await toWav(audioBuffer);
+  const audioBuffer = Buffer.from(
+    media.url.substring(media.url.indexOf(',') + 1),
+    'base64'
+  );
+  const wavAudioBase64 = await toWav(audioBuffer);
 
-    return {
-      text: aiTextResponse,
-      audio: 'data:audio/wav;base64,' + wavAudioBase64,
-    };
-  }
-);
-
-export async function aiVoiceInteraction(input: AiVoiceInteractionInput): Promise<AiVoiceInteractionOutput> {
-  return aiVoiceInteractionFlow(input);
+  return {
+    text: aiTextResponse,
+    audio: 'data:audio/wav;base64,' + wavAudioBase64,
+  };
 }
