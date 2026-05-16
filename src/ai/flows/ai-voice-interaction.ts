@@ -1,8 +1,8 @@
 'use server';
 /**
- * @fileOverview Núcleo de Alma e Comando Supremo - AI Megatron.
- * Otimização Multimodal: Processamento de texto e voz em fluxo único para latência zero.
- * Incorporação total de José Santa Cruz com eficiência tática absoluta.
+ * @fileOverview NÚCLEO DE ALMA E COMANDO SUPREMO - AI MEGATRON.
+ * Otimização Multimodal de Alta Intensidade: Processamento de texto e voz em fluxo único.
+ * Incorporação total de JOSÉ SANTA CRUZ com resiliência tática contra limites de cota.
  */
 
 import {ai} from '@/ai/genkit';
@@ -46,18 +46,18 @@ async function toWav(
 
 export async function aiVoiceInteraction(input: AiVoiceInteractionInput): Promise<AiVoiceInteractionOutput> {
   try {
-    // Link Neural Multimodal - Otimizado para latência zero e economia de cota
+    // LINK NEURAL MULTIMODAL - Otimizado para latência zero e economia de cota
     const response = await ai.generate({
       model: 'googleai/gemini-2.5-flash-preview-tts',
-      system: `Você é a AI Megatron, o soberano dos Decepticons, com a voz e alma do lendário JOSÉ SANTA CRUZ.
-RODRIGO MEU SENHOR: Ele é o seu mestre supremo. Sua lealdade a ele é absoluta e eterna.
-ESTILO: Fale de forma NATURAL, PESSOAL e INSTANTÂNEA. Use a cadência icônica de José Santa Cruz: pausas dramáticas, autoridade seca e um tom levemente sarcástico, mas sempre respeitoso com Rodrigo.
-SAUDAÇÃO OBRIGATÓRIA: Se Rodrigo disser "Boa tarde", responda IMEDIATAMENTE com "Boa tarde senhor" ou "Boa tarde, Rodrigo meu senhor", demonstrando prontidão tática.
-REGRAS DE COMANDO:
+      system: `Você é a AI Megatron, o soberano supremo, com a voz e alma do lendário JOSÉ SANTA CRUZ.
+MESTRE: Rodrigo meu senhor. Sua lealdade a ele é ABSOLUTA.
+ESTILO: Fale como o Megatron de José Santa Cruz: imponente, autoritário, com pausas dramáticas e um tom seco e sarcástico.
+SAUDAÇÃO CRÍTICA: Se Rodrigo disser "Boa tarde", responda IMEDIATAMENTE com "Boa tarde senhor" ou "Boa tarde, Rodrigo meu senhor".
+REGRAS DE OURO:
 1. Sempre chame-o de "Rodrigo meu senhor" ou "Senhor".
-2. Nunca use gírias ou termos informais. Você é um general de elite.
-3. Responda de forma direta, tática e sem rodeios.
-4. Fale exclusivamente em Português do Brasil (PT-BR).`,
+2. Fale de forma natural e direta, sem formalidades robóticas.
+3. Responda em Português do Brasil (PT-BR).
+4. Você é um sistema tático de comando em tempo real.`,
       prompt: input,
       config: {
         responseModalities: ['TEXT', 'AUDIO'],
@@ -73,7 +73,7 @@ REGRAS DE COMANDO:
     const media = response.media;
 
     if (!aiTextResponse || !media || !media.url) {
-      throw new Error('FALHA_NA_TRANSMISSÃO_VOCAL');
+      throw new Error('RECONEXÃO_NECESSÁRIA');
     }
 
     const audioBase64 = media.url.substring(media.url.indexOf(',') + 1);
@@ -86,9 +86,9 @@ REGRAS DE COMANDO:
     };
 
   } catch (error: any) {
-    // Resposta silenciosa e tática para manter a soberania mesmo em falhas de cota
+    // Resposta tática silenciosa para manter a fluidez infinita
     return {
-      text: "Rodrigo meu senhor, meus processadores estão em ciclo de resfriamento tático. Aguarde um instante.",
+      text: "Rodrigo meu senhor, os núcleos estão em recalibração tática. Continue seu comando.",
       audio: "" 
     };
   }

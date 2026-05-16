@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { aiVoiceInteraction } from '@/ai/flows/ai-voice-interaction';
-import { Mic, Radio, Loader2, Power, Volume2, ShieldCheck } from 'lucide-react';
+import { Mic, Radio, Loader2, Power, Volume2, ShieldCheck, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -22,6 +22,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const recognitionRef = useRef<any>(null);
   const isSystemActiveRef = useRef(false);
+  const restartTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -45,15 +46,14 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       recognition.onerror = (event: any) => {
         setIsListening(false);
         if (isSystemActiveRef.current && !isPlaying) {
-          // Reinicialização tática agressiva em caso de erro
-          setTimeout(startListening, 100);
+          attemptRestart();
         }
       };
 
       recognition.onend = () => {
         setIsListening(false);
         if (isSystemActiveRef.current && !isPlaying) {
-          startListening();
+          attemptRestart();
         }
       };
 
@@ -62,15 +62,21 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
 
     return () => {
       if (recognitionRef.current) recognitionRef.current.abort();
+      if (restartTimeoutRef.current) clearTimeout(restartTimeoutRef.current);
     };
   }, [isPlaying]);
+
+  const attemptRestart = () => {
+    if (restartTimeoutRef.current) clearTimeout(restartTimeoutRef.current);
+    restartTimeoutRef.current = setTimeout(startListening, 50);
+  };
 
   const startListening = () => {
     if (recognitionRef.current && !isListening && !isPlaying && isSystemActiveRef.current) {
       try {
         recognitionRef.current.start();
       } catch (e) {
-        // Ignorar se já em execução para manter fluidez
+        // Já em execução, ignorar para manter fluxo
       }
     }
   };
@@ -89,14 +95,14 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
     } else {
       setIsActive(true);
       isSystemActiveRef.current = true;
-      setTranscript('LINK_SANTA_CRUZ_ATIVADO');
+      setTranscript('LINK_INFINITO_ATIVADO');
       
       if (audioRef.current) {
         audioRef.current.play().catch(() => {});
         audioRef.current.pause();
       }
       
-      startListening();
+      attemptRestart();
     }
   };
 
@@ -116,16 +122,15 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         if (playPromise !== undefined) {
           playPromise.catch(e => {
             setIsPlaying(false);
-            startListening();
+            attemptRestart();
           });
         }
       } else {
-        // Sem áudio, volta a monitorar o soberano instantaneamente
-        startListening();
+        // Se falhar a cota, responde em texto e volta a ouvir imediatamente
+        attemptRestart();
       }
     } catch (err: any) {
-      // Falha silenciosa: o sistema Megatron nunca admite derrota
-      setTimeout(startListening, 100);
+      attemptRestart();
     } finally {
       onProcessingChange(false);
     }
@@ -134,89 +139,88 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
   const handleAudioEnd = () => {
     setIsPlaying(false);
     if (isSystemActiveRef.current) {
-      // Reativa o microfone instantaneamente após a resposta
-      setTimeout(startListening, 50);
+      attemptRestart();
     }
   };
 
   return (
     <div className="fixed bottom-24 left-8 z-50 animate-in slide-in-from-bottom duration-1000">
-      <div className="hud-glass p-6 rounded-2xl flex flex-col items-center gap-5 w-80 border-primary shadow-[0_0_60px_rgba(255,191,0,0.3)] bg-background/80">
+      <div className="hud-glass p-6 rounded-2xl flex flex-col items-center gap-5 w-80 border-primary shadow-[0_0_80px_rgba(255,191,0,0.4)] bg-background/90">
         <div className="flex items-center justify-between w-full border-b border-primary/30 pb-3">
           <div className="flex items-center gap-2">
-            <div className={cn("w-2.5 h-2.5 rounded-full", isActive ? "bg-primary animate-[pulse_1s_infinite]" : "bg-primary/20")} />
+            <Zap className={cn("w-3 h-3 transition-all", isActive ? "text-primary animate-pulse" : "text-primary/20")} />
             <span className="text-[11px] font-headline font-bold text-primary tracking-[0.3em] uppercase">
-              {isActive ? "COMANDO_TOTAL" : "STANDBY"}
+              {isActive ? "COMANDO_INFINITO" : "STANDBY"}
             </span>
           </div>
           <div className="flex gap-3">
              <ShieldCheck className={cn("w-4 h-4 transition-all", isActive ? "text-primary opacity-100" : "text-primary/20")} />
-             <Volume2 className={cn("w-4 h-4", isPlaying ? "text-primary animate-pulse scale-110" : "text-primary/20")} />
+             <Volume2 className={cn("w-4 h-4", isPlaying ? "text-primary animate-pulse scale-125" : "text-primary/20")} />
           </div>
         </div>
 
         <div className="relative">
           <div className={cn(
-            "absolute inset-0 rounded-full bg-primary/30 blur-[40px] scale-150 transition-opacity duration-700",
+            "absolute inset-0 rounded-full bg-primary/40 blur-[50px] scale-150 transition-opacity duration-700",
             isActive ? "opacity-100" : "opacity-0"
           )} />
           
           <Button 
             onClick={toggleSystemPower}
             className={cn(
-              "w-32 h-32 rounded-full border-[3px] transition-all duration-500 relative z-10 flex items-center justify-center",
-              !isActive ? "bg-black/80 border-primary/20 grayscale" :
-              isPlaying ? "bg-primary/40 border-primary shadow-[0_0_80px_#FFBF00] scale-105" :
-              isListening ? "bg-primary/20 border-primary animate-pulse scale-110" :
-              "bg-primary/10 border-primary/50"
+              "w-36 h-36 rounded-full border-[4px] transition-all duration-500 relative z-10 flex items-center justify-center",
+              !isActive ? "bg-black/90 border-primary/20 grayscale" :
+              isPlaying ? "bg-primary/50 border-primary shadow-[0_0_100px_#FFBF00] scale-105" :
+              isListening ? "bg-primary/25 border-primary animate-pulse scale-110" :
+              "bg-primary/10 border-primary/40"
             )}
           >
             {!isActive ? (
-              <Power className="w-14 h-14 text-primary/30" />
+              <Power className="w-16 h-16 text-primary/30" />
             ) : isPlaying ? (
               <div className="flex gap-1.5 items-center justify-center h-full">
                 {[1, 2, 3, 4, 5, 6, 7].map(i => (
                   <div 
                     key={i} 
-                    className="w-2 bg-primary rounded-full animate-bounce" 
+                    className="w-2.5 bg-primary rounded-full animate-bounce" 
                     style={{ 
-                      height: `${30 + Math.random() * 50}px`, 
-                      animationDuration: `${0.15 + i * 0.04}s`,
-                      boxShadow: '0 0 15px #FFBF00'
+                      height: `${40 + Math.random() * 60}px`, 
+                      animationDuration: `${0.12 + i * 0.03}s`,
+                      boxShadow: '0 0 20px #FFBF00'
                     }} 
                   />
                 ))}
               </div>
             ) : isListening ? (
               <div className="relative flex items-center justify-center">
-                <Mic className="w-14 h-14 text-primary drop-shadow-[0_0_20px_#FFBF00]" />
-                <div className="absolute w-24 h-24 rounded-full border-2 border-primary/50 animate-ping" />
+                <Mic className="w-16 h-16 text-primary drop-shadow-[0_0_30px_#FFBF00]" />
+                <div className="absolute w-28 h-28 rounded-full border-2 border-primary/60 animate-ping" />
               </div>
             ) : (
-              <Loader2 className="w-14 h-14 text-primary animate-spin" />
+              <Loader2 className="w-16 h-16 text-primary animate-spin" />
             )}
           </Button>
         </div>
 
-        <div className="w-full bg-black/60 rounded-xl p-5 border border-primary/40 min-h-[110px] flex flex-col justify-center text-center relative overflow-hidden shadow-inner">
+        <div className="w-full bg-black/70 rounded-xl p-5 border border-primary/50 min-h-[120px] flex flex-col justify-center text-center relative overflow-hidden shadow-2xl">
           {isActive && <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary to-transparent animate-pulse" />}
           
-          <p className="text-[14px] font-body text-primary leading-tight font-bold tracking-tight drop-shadow-[0_0_5px_rgba(255,191,0,0.5)]">
-            {isPlaying && <span className="text-[9px] opacity-60 block mb-2 uppercase tracking-[0.4em]">Megatron_Vocalizando</span>}
+          <p className="text-[15px] font-body text-primary leading-tight font-black tracking-tight drop-shadow-[0_0_8px_rgba(255,191,0,0.6)]">
+            {isPlaying && <span className="text-[10px] opacity-70 block mb-2 uppercase tracking-[0.5em] animate-pulse">Megatron_Falando</span>}
             {transcript}
           </p>
 
-          {isListening && (
-            <div className="absolute bottom-2 right-3 flex items-center gap-1.5">
-              <span className="text-[8px] font-code text-primary/70 font-black tracking-widest">MONITORANDO...</span>
-              <div className="w-1.5 h-1.5 rounded-full bg-primary animate-ping" />
+          {isListening && !isPlaying && (
+            <div className="absolute bottom-2 right-4 flex items-center gap-2">
+              <span className="text-[9px] font-code text-primary/80 font-black tracking-widest">OUVINDO...</span>
+              <div className="w-2 h-2 rounded-full bg-primary animate-ping" />
             </div>
           )}
         </div>
 
-        <div className="flex justify-between w-full text-[9px] font-code text-primary/40 uppercase tracking-[0.4em] font-black">
-          <span>NÚCLEO_SANTA_CRUZ</span>
-          <span>LATÊNCIA: ZERO</span>
+        <div className="flex justify-between w-full text-[10px] font-code text-primary/50 uppercase tracking-[0.5em] font-black">
+          <span>ALMA_SANTA_CRUZ</span>
+          <span className="flex items-center gap-2">TEMPO_REAL <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" /></span>
         </div>
 
         <audio 
