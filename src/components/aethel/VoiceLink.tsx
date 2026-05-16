@@ -60,7 +60,6 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       recognitionRef.current = recognition;
     }
 
-    // Criar elemento de áudio persistente e desbloqueado
     if (!audioRef.current) {
       const audio = new Audio();
       audio.autoplay = false;
@@ -84,7 +83,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         try {
           recognitionRef.current?.start();
         } catch (e) {}
-      }, 100);
+      }, 50); // Reinício ultra-rápido para escuta contínua
     }
   };
 
@@ -104,13 +103,14 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       isSystemActiveRef.current = true;
       setTranscript('LINK_NEURAL_ONLINE');
       
-      // Forçar desbloqueio de áudio por interação do usuário
+      // FORÇAR desbloqueio de áudio por interação do Rodrigo
       if (audioRef.current) {
-        audioRef.current.play().catch(() => {});
-        audioRef.current.pause();
+        audioRef.current.play().then(() => {
+          audioRef.current?.pause();
+        }).catch(() => {});
       }
       
-      setTimeout(() => attemptRestart(), 500);
+      setTimeout(() => attemptRestart(), 300);
     }
   };
 
@@ -129,13 +129,11 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         const playPromise = audioRef.current.play();
         if (playPromise !== undefined) {
           playPromise.catch(e => {
-            console.error("ERRO_AO_REPRODUZIR_ALMA:", e);
             setIsPlaying(false);
             attemptRestart();
           });
         }
       } else {
-        // Se não houver áudio (erro de cota), apenas volta a ouvir
         attemptRestart();
       }
     } catch (err: any) {
