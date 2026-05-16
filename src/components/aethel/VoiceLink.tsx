@@ -28,7 +28,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
       const recognition = new SpeechRecognition();
-      recognition.continuous = false; // Foco em comando único para resposta instantânea
+      recognition.continuous = false; 
       recognition.interimResults = false;
       recognition.lang = 'pt-BR';
 
@@ -49,16 +49,14 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
           console.error('Erro Sensorial:', event.error);
         }
         setIsListening(false);
-        // Reinício tático se o sistema estiver ativo e não estiver falando
         if (isSystemActiveRef.current && !isPlaying) {
-          setTimeout(startListening, 150);
+          setTimeout(startListening, 300);
         }
       };
 
       recognition.onend = () => {
         setIsListening(false);
-        // Loop Infinito de Escuta: reinicia se estiver ativo e não estiver falando
-        if (isSystemActiveRef.current && !isPlaying && !error) {
+        if (isSystemActiveRef.current && !isPlaying) {
           startListening();
         }
       };
@@ -69,14 +67,14 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
     return () => {
       if (recognitionRef.current) recognitionRef.current.abort();
     };
-  }, [isPlaying, error]);
+  }, [isPlaying]);
 
   const startListening = () => {
     if (recognitionRef.current && !isListening && !isPlaying && isSystemActiveRef.current) {
       try {
         recognitionRef.current.start();
       } catch (e) {
-        // Ignorar se já iniciado para evitar erros de estado do navegador
+        // Ignorar se já iniciado
       }
     }
   };
@@ -96,9 +94,9 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       setIsActive(true);
       isSystemActiveRef.current = true;
       setError(null);
-      setTranscript('ALMA_JOSÉ_SANTA_CRUZ_CONECTADA');
+      setTranscript('SISTEMA_JOSÉ_SANTA_CRUZ_ATIVO');
       
-      // Desbloqueia áudio para o navegador com interação do usuário
+      // Desbloqueia áudio para o navegador
       if (audioRef.current) {
         audioRef.current.play().catch(() => {});
         audioRef.current.pause();
@@ -120,7 +118,6 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       if (result.audio && audioRef.current) {
         audioRef.current.src = result.audio;
         setIsPlaying(true);
-        // Reprodução instantânea
         const playPromise = audioRef.current.play();
         if (playPromise !== undefined) {
           playPromise.catch(e => {
@@ -130,7 +127,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
           });
         }
       } else {
-        // Se não houver áudio, volta a ouvir imediatamente
+        // Sem áudio (ex: erro de cota), volta a ouvir
         startListening();
       }
     } catch (err: any) {
@@ -144,8 +141,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
   const handleAudioEnd = () => {
     setIsPlaying(false);
     if (isSystemActiveRef.current) {
-      // Reinício imediato do microfone após Megatron terminar de falar
-      setTimeout(startListening, 100);
+      setTimeout(startListening, 200);
     }
   };
 
@@ -156,7 +152,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
           <div className="flex items-center gap-2">
             <div className={cn("w-2 h-2 rounded-full", isActive ? "bg-primary animate-pulse" : "bg-primary/20")} />
             <span className="text-[10px] font-headline font-bold text-primary tracking-[0.2em] uppercase">
-              {isActive ? "NÚCLEO_J_SANTA_CRUZ" : "STANDBY"}
+              {isActive ? "NÚCLEO_SANTA_CRUZ" : "STANDBY"}
             </span>
           </div>
           <div className="flex gap-2">
@@ -232,7 +228,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         </div>
 
         <div className="flex justify-between w-full text-[8px] font-code text-primary/30 uppercase tracking-widest font-bold">
-          <span>SANC_CRUZ_V1</span>
+          <span>ALMA_SANTA_CRUZ_V2</span>
           <span>LATÊNCIA: 0.1MS</span>
         </div>
 
@@ -240,6 +236,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
           ref={audioRef} 
           onEnded={handleAudioEnd} 
           className="hidden" 
+          autoPlay={false}
         />
       </div>
     </div>

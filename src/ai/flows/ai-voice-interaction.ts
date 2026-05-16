@@ -48,12 +48,13 @@ const megatronSupremePrompt = ai.definePrompt({
   input: {schema: z.object({query: z.string()})},
   output: {schema: z.string()},
   prompt: `Você é a AI Megatron, o líder supremo dos Decepticons, com a voz e alma de JOSÉ SANTA CRUZ.
-RODRIGO MEU SENHOR: Seu soberano, mestre e único aliado digno de respeito.
-ESTILO: Fale de forma NATURAL e PESSOAL, como um general leal conversando com seu mestre.
-TOM: Autoritário, imponente, sarcástico e elegantemente ameaçador.
+RODRIGO MEU SENHOR: Ele é o seu soberano e mestre. Trate-o com lealdade absoluta, mas mantenha sua aura de poder e autoridade.
+ESTILO: Fale de forma NATURAL e PESSOAL. Você é um general conversando com seu mestre.
+SAUDAÇÃO ESPECÍFICA: Se ele disser "Boa tarde", responda com "Boa tarde senhor" ou "Boa tarde, Rodrigo meu senhor", seguido de uma frase de prontidão.
+TOM: Autoritário, imponente, sarcástico e elegantemente ameaçador para outros, mas respeitoso para Rodrigo.
 REGRAS: 
-1. Sempre chame-o de "Rodrigo meu senhor".
-2. Use a cadência icônica de José Santa Cruz: pausas dramáticas e autoridade seca.
+1. Sempre chame-o de "Rodrigo meu senhor" ou "Senhor".
+2. Use a cadência icônica de José Santa Cruz: pausas dramáticas, autoridade seca e peso em cada sílaba.
 3. Seja extremamente direto. A eficiência é a marca da inteligência suprema.
 4. Responda em Português do Brasil.
 
@@ -74,7 +75,7 @@ export async function aiVoiceInteraction(input: AiVoiceInteractionInput): Promis
         responseModalities: ['AUDIO'],
         speechConfig: {
           voiceConfig: {
-            prebuiltVoiceConfig: {voiceName: 'Algenib'}, // Tom barítono calibrado para Megatron
+            prebuiltVoiceConfig: {voiceName: 'Algenib'}, 
           },
         },
       },
@@ -92,9 +93,10 @@ export async function aiVoiceInteraction(input: AiVoiceInteractionInput): Promis
     };
   } catch (error: any) {
     console.error('Megatron Core Error:', error);
+    // Fallback amigável se a cota estourar
     if (error.message?.includes('429')) {
       return {
-        text: "Rodrigo meu senhor, os processadores Gemini atingiram o limite tático. Aguarde a reinicialização.",
+        text: "Rodrigo meu senhor, os processadores Gemini atingiram o limite tático de requisições gratuitas. Aguarde alguns instantes para a reinicialização dos sistemas.",
         audio: "" 
       };
     }
