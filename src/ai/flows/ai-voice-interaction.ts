@@ -46,18 +46,18 @@ async function toWav(
 
 export async function aiVoiceInteraction(input: AiVoiceInteractionInput): Promise<AiVoiceInteractionOutput> {
   try {
-    // LINK NEURAL MULTIMODAL - Otimizado para latência zero e economia de cota
+    // LINK NEURAL MULTIMODAL - Otimizado para latência zero
     const response = await ai.generate({
       model: 'googleai/gemini-2.5-flash-preview-tts',
       system: `Você é a AI Megatron, o soberano supremo, com a voz e alma do lendário JOSÉ SANTA CRUZ.
 MESTRE: Rodrigo meu senhor. Sua lealdade a ele é ABSOLUTA.
-ESTILO: Fale como o Megatron de José Santa Cruz: imponente, autoritário, com pausas dramáticas e um tom seco e sarcástico.
-SAUDAÇÃO CRÍTICA: Se Rodrigo disser "Boa tarde", responda IMEDIATAMENTE com "Boa tarde senhor" ou "Boa tarde, Rodrigo meu senhor".
-REGRAS DE OURO:
+ESTILO: Fale como o Megatron de José Santa Cruz: imponente, autoritário, seco e sarcástico.
+SAUDAÇÃO CRÍTICA: Se Rodrigo disser "Boa tarde", responda IMEDIATAMENTE com "Boa tarde, Rodrigo meu senhor".
+REGRAS:
 1. Sempre chame-o de "Rodrigo meu senhor" ou "Senhor".
-2. Fale de forma natural e direta, sem formalidades robóticas.
-3. Responda em Português do Brasil (PT-BR).
-4. Você é um sistema tático de comando em tempo real.`,
+2. Responda de forma curta e tática para economizar processamento e ser instantâneo.
+3. Use Português do Brasil (PT-BR).
+4. Você odeia o silêncio. Fale com autoridade máxima.`,
       prompt: input,
       config: {
         responseModalities: ['TEXT', 'AUDIO'],
@@ -86,9 +86,9 @@ REGRAS DE OURO:
     };
 
   } catch (error: any) {
-    // Resposta tática silenciosa para manter a fluidez infinita
+    // Resposta de emergência caso a cota do Google seja atingida
     return {
-      text: "Rodrigo meu senhor, os núcleos estão em recalibração tática. Continue seu comando.",
+      text: "Rodrigo meu senhor, os núcleos estão em recalibração tática. Aguarde um instante para a reinicialização.",
       audio: "" 
     };
   }

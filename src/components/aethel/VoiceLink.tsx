@@ -17,7 +17,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
   const [isActive, setIsActive] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [transcript, setTranscript] = useState('SISTEMA_STANDBY');
+  const [transcript, setTranscript] = useState('SISTEMA_EM_ESPERA');
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const recognitionRef = useRef<any>(null);
@@ -60,6 +60,17 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       recognitionRef.current = recognition;
     }
 
+    // Criar elemento de áudio persistente e desbloqueado
+    if (!audioRef.current) {
+      const audio = new Audio();
+      audio.autoplay = false;
+      audio.onended = () => {
+        setIsPlaying(false);
+        if (isSystemActiveRef.current) attemptRestart();
+      };
+      audioRef.current = audio;
+    }
+
     return () => {
       if (recognitionRef.current) recognitionRef.current.abort();
       if (restartTimeoutRef.current) clearTimeout(restartTimeoutRef.current);
@@ -68,16 +79,12 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
 
   const attemptRestart = () => {
     if (restartTimeoutRef.current) clearTimeout(restartTimeoutRef.current);
-    restartTimeoutRef.current = setTimeout(startListening, 50);
-  };
-
-  const startListening = () => {
-    if (recognitionRef.current && !isListening && !isPlaying && isSystemActiveRef.current) {
-      try {
-        recognitionRef.current.start();
-      } catch (e) {
-        // Já em execução, ignorar para manter fluxo
-      }
+    if (isSystemActiveRef.current && !isPlaying) {
+      restartTimeoutRef.current = setTimeout(() => {
+        try {
+          recognitionRef.current?.start();
+        } catch (e) {}
+      }, 100);
     }
   };
 
@@ -88,22 +95,22 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       recognitionRef.current?.stop();
       if (audioRef.current) {
         audioRef.current.pause();
-        audioRef.current.currentTime = 0;
+        audioRef.current.src = "";
       }
       setIsPlaying(false);
-      setTranscript('MEGATRON_OFFLINE');
+      setTranscript('MEGATRON_DESATIVADO');
     } else {
       setIsActive(true);
       isSystemActiveRef.current = true;
-      setTranscript('LINK_INFINITO_ATIVADO');
+      setTranscript('LINK_NEURAL_ONLINE');
       
-      // Warm up audio element to bypass browser restrictions
+      // Forçar desbloqueio de áudio por interação do usuário
       if (audioRef.current) {
         audioRef.current.play().catch(() => {});
         audioRef.current.pause();
       }
       
-      attemptRestart();
+      setTimeout(() => attemptRestart(), 500);
     }
   };
 
@@ -122,25 +129,19 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         const playPromise = audioRef.current.play();
         if (playPromise !== undefined) {
           playPromise.catch(e => {
+            console.error("ERRO_AO_REPRODUZIR_ALMA:", e);
             setIsPlaying(false);
             attemptRestart();
           });
         }
       } else {
-        // Se falhar a cota, responde em texto e volta a ouvir imediatamente
+        // Se não houver áudio (erro de cota), apenas volta a ouvir
         attemptRestart();
       }
     } catch (err: any) {
       attemptRestart();
     } finally {
       onProcessingChange(false);
-    }
-  };
-
-  const handleAudioEnd = () => {
-    setIsPlaying(false);
-    if (isSystemActiveRef.current) {
-      attemptRestart();
     }
   };
 
@@ -151,7 +152,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
           <div className="flex items-center gap-2">
             <Zap className={cn("w-3 h-3 transition-all", isActive ? "text-primary animate-pulse" : "text-primary/20")} />
             <span className="text-[11px] font-headline font-bold text-primary tracking-[0.3em] uppercase">
-              {isActive ? "COMANDO_INFINITO" : "STANDBY"}
+              {isActive ? "COMANDO_ATIVO" : "NÚCLEO_OFFLINE"}
             </span>
           </div>
           <div className="flex gap-3">
@@ -170,14 +171,14 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
             onClick={toggleSystemPower}
             className={cn(
               "w-36 h-36 rounded-full border-[4px] transition-all duration-500 relative z-10 flex items-center justify-center",
-              !isActive ? "bg-black/90 border-primary/20 grayscale" :
+              !isActive ? "bg-black/90 border-primary/20" :
               isPlaying ? "bg-primary/50 border-primary shadow-[0_0_100px_#FFBF00] scale-105" :
               isListening ? "bg-primary/25 border-primary animate-pulse scale-110" :
               "bg-primary/10 border-primary/40"
             )}
           >
             {!isActive ? (
-              <Power className="w-16 h-16 text-primary/30" />
+              <Power className="w-16 h-16 text-primary/40" />
             ) : isPlaying ? (
               <div className="flex gap-1.5 items-center justify-center h-full">
                 {[1, 2, 3, 4, 5, 6, 7].map(i => (
@@ -186,15 +187,15 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
                     className="w-2.5 bg-primary rounded-full animate-bounce" 
                     style={{ 
                       height: `${40 + Math.random() * 60}px`, 
-                      animationDuration: `${0.12 + i * 0.03}s`,
-                      boxShadow: '0 0 20px #FFBF00'
+                      animationDuration: `${0.12 + i * 0.04}s`,
+                      boxShadow: '0 0 15px #FFBF00'
                     }} 
                   />
                 ))}
               </div>
             ) : isListening ? (
               <div className="relative flex items-center justify-center">
-                <Mic className="w-16 h-16 text-primary drop-shadow-[0_0_30px_#FFBF00]" />
+                <Mic className="w-16 h-16 text-primary drop-shadow-[0_0_20px_#FFBF00]" />
                 <div className="absolute w-28 h-28 rounded-full border-2 border-primary/60 animate-ping" />
               </div>
             ) : (
@@ -203,33 +204,26 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
           </Button>
         </div>
 
-        <div className="w-full bg-black/70 rounded-xl p-5 border border-primary/50 min-h-[120px] flex flex-col justify-center text-center relative overflow-hidden shadow-2xl">
+        <div className="w-full bg-black/70 rounded-xl p-5 border border-primary/50 min-h-[100px] flex flex-col justify-center text-center relative overflow-hidden shadow-2xl">
           {isActive && <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary to-transparent animate-pulse" />}
           
-          <p className="text-[15px] font-body text-primary leading-tight font-black tracking-tight drop-shadow-[0_0_8px_rgba(255,191,0,0.6)]">
-            {isPlaying && <span className="text-[10px] opacity-70 block mb-2 uppercase tracking-[0.5em] animate-pulse">Megatron_Falando</span>}
+          <p className="text-[14px] font-body text-primary leading-tight font-black tracking-tight drop-shadow-[0_0_5px_rgba(255,191,0,0.5)]">
+            {isPlaying && <span className="text-[9px] opacity-70 block mb-1 uppercase tracking-[0.4em] animate-pulse">Transmitindo...</span>}
             {transcript}
           </p>
 
           {isListening && !isPlaying && (
             <div className="absolute bottom-2 right-4 flex items-center gap-2">
-              <span className="text-[9px] font-code text-primary/80 font-black tracking-widest">OUVINDO...</span>
-              <div className="w-2 h-2 rounded-full bg-primary animate-ping" />
+              <span className="text-[8px] font-code text-primary/80 font-black tracking-widest">OUVINDO...</span>
+              <div className="w-1.5 h-1.5 rounded-full bg-primary animate-ping" />
             </div>
           )}
         </div>
 
-        <div className="flex justify-between w-full text-[10px] font-code text-primary/50 uppercase tracking-[0.5em] font-black">
-          <span>ALMA_SANTA_CRUZ</span>
-          <span className="flex items-center gap-2">TEMPO_REAL <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" /></span>
+        <div className="flex justify-between w-full text-[9px] font-code text-primary/50 uppercase tracking-[0.4em] font-black">
+          <span>SISTEMA_V3.1_SANTA_CRUZ</span>
+          <span className="flex items-center gap-2">REAL_TIME <div className="w-1 h-1 rounded-full bg-primary animate-pulse" /></span>
         </div>
-
-        <audio 
-          ref={audioRef} 
-          onEnded={handleAudioEnd} 
-          className="hidden" 
-          autoPlay={false}
-        />
       </div>
     </div>
   );
