@@ -1,15 +1,16 @@
 'use server';
 /**
  * @fileOverview Este fluxo lida com interações de voz da AI Megatron em PT-BR.
+ * Utiliza o modelo Gemini TTS para gerar áudio tático.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import {googleAI} from '@genkit-ai/google-genai';
-import * as wav from 'wav';
+import wav from 'wav';
 import {Buffer} from 'node:buffer';
 
-const AiVoiceInteractionInputSchema = z.string().describe('A consulta de voz do usuário.');
+const AiVoiceInteractionInputSchema = z.string().describe('A consulta de voz ou texto para resposta em áudio.');
 export type AiVoiceInteractionInput = z.infer<typeof AiVoiceInteractionInputSchema>;
 
 const AiVoiceInteractionOutputSchema = z.object({
@@ -47,12 +48,13 @@ async function toWav(
 
 const megatronTextResponsePrompt = ai.definePrompt({
   name: 'megatronTextResponsePrompt',
-  input: {schema: AiVoiceInteractionInputSchema},
+  input: {schema: z.object({query: z.string()})},
   output: {schema: z.string()},
-  prompt: `Você é a AI Megatron, um sistema de comando tático superior. Responda em Português do Brasil (PT-BR).
-Seja imponente, eficiente e direto.
+  prompt: `Você é a AI Megatron. Responda ao comando de voz do Comandante.
+Idioma: Português do Brasil (PT-BR).
+Tom: Superior, direto e robótico.
 
-Consulta do usuário: {{{query}}}`,
+Comando: {{{query}}}`,
 });
 
 const aiVoiceInteractionFlow = ai.defineFlow(
@@ -62,14 +64,16 @@ const aiVoiceInteractionFlow = ai.defineFlow(
     outputSchema: AiVoiceInteractionOutputSchema,
   },
   async input => {
+    // 1. Gerar a resposta textual tática
     const {output: aiTextResponse} = await megatronTextResponsePrompt({query: input});
     if (!aiTextResponse) {
-      throw new Error('Falha ao gerar resposta textual.');
+      throw new Error('Falha ao processar núcleo de resposta.');
     }
 
+    // 2. Converter texto em áudio com tom tático
     const {media} = await ai.generate({
       model: googleAI.model('gemini-2.5-flash-preview-tts'),
-      prompt: aiTextResponse,
+      prompt: `Narre este comando tático em Português do Brasil com voz firme e robótica: ${aiTextResponse}`,
       config: {
         responseModalities: ['AUDIO'],
         speechConfig: {
@@ -81,7 +85,7 @@ const aiVoiceInteractionFlow = ai.defineFlow(
     });
 
     if (!media || !media.url) {
-      throw new Error('Nenhum áudio retornado pelo modelo TTS.');
+      throw new Error('Falha no link de transmissão de áudio.');
     }
 
     const audioBuffer = Buffer.from(
