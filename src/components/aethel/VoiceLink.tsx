@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { aiVoiceInteraction } from '@/ai/flows/ai-voice-interaction';
 import { Mic, Radio, Loader2, Power, Volume2, Zap, LockOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -20,7 +20,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
   const [isActive, setIsActive] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [transcript, setTranscript] = useState('SISTEMA_MARIA_EM_ESPERA');
+  const [transcript, setTranscript] = useState('MARIA_OFFLINE');
   const [hasPermission, setHasPermission] = useState(false);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -28,6 +28,19 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
   const isSystemActiveRef = useRef(false);
   const isProcessingRef = useRef(false);
   const restartTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const attemptRestart = useCallback(() => {
+    if (restartTimeoutRef.current) clearTimeout(restartTimeoutRef.current);
+    if (isSystemActiveRef.current && !isPlaying && !isListening && !isProcessingRef.current) {
+      restartTimeoutRef.current = setTimeout(() => {
+        try {
+          recognitionRef.current?.start();
+        } catch (e) {
+          // Ignorar se já estiver rodando
+        }
+      }, 300); 
+    }
+  }, [isPlaying, isListening]);
 
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -39,22 +52,28 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
 
       recognition.onstart = () => {
         setIsListening(true);
-        setTranscript('MARIA_OUVINDO_COMANDO...');
+        setTranscript('MARIA_OUVINDO...');
       };
 
       recognition.onresult = (event: any) => {
         const text = event.results[0][0].transcript;
-        if (text) handleProcessVoice(text);
+        if (text) {
+          handleProcessVoice(text);
+        }
       };
 
-      recognition.onerror = () => {
+      recognition.onerror = (event: any) => {
         setIsListening(false);
-        if (isSystemActiveRef.current && !isPlaying && !isProcessingRef.current) attemptRestart();
+        if (isSystemActiveRef.current && !isPlaying && !isProcessingRef.current) {
+          attemptRestart();
+        }
       };
 
       recognition.onend = () => {
         setIsListening(false);
-        if (isSystemActiveRef.current && !isPlaying && !isProcessingRef.current) attemptRestart();
+        if (isSystemActiveRef.current && !isPlaying && !isProcessingRef.current) {
+          attemptRestart();
+        }
       };
 
       recognitionRef.current = recognition;
@@ -79,20 +98,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       recognitionRef.current?.abort();
       if (restartTimeoutRef.current) clearTimeout(restartTimeoutRef.current);
     };
-  }, []);
-
-  const attemptRestart = () => {
-    if (restartTimeoutRef.current) clearTimeout(restartTimeoutRef.current);
-    if (isSystemActiveRef.current && !isPlaying && !isListening && !isProcessingRef.current) {
-      restartTimeoutRef.current = setTimeout(() => {
-        try {
-          recognitionRef.current?.start();
-        } catch (e) {
-          // Já em execução ou erro silencioso
-        }
-      }, 400); 
-    }
-  };
+  }, [attemptRestart]);
 
   const toggleSystemPower = () => {
     if (isActive) {
@@ -109,26 +115,32 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       setIsActive(true);
       setHasPermission(true);
       isSystemActiveRef.current = true;
-      setTranscript('LINK_MARIA_ESTABELECIDO');
+      setTranscript('SISTEMA_MARIA_PRONTO');
       
-      // DESBLOQUEIO DE ÁUDIO RECALIBRADO
+      // DESBLOQUEIO AGRESSIVO DE ÁUDIO
       if (audioRef.current) {
         audioRef.current.src = SILENCE_WAV;
         audioRef.current.play()
-          .then(() => console.log("DRIVER_AUDIO_UNLOCKED"))
-          .catch(() => console.warn("DRIVER_AUDIO_BUSY_BUT_LINKED"));
+          .then(() => {
+            console.log("DRIVER_AUDIO_ESTABILIZADO");
+            setTimeout(() => attemptRestart(), 500);
+          })
+          .catch(() => {
+            console.warn("DRIVER_AUDIO_BLOQUEADO_PELA_SEGURANCA");
+            setTimeout(() => attemptRestart(), 500);
+          });
       }
-      
-      setTimeout(() => attemptRestart(), 500);
     }
   };
 
   const handleProcessVoice = async (query: string) => {
+    if (isProcessingRef.current) return;
+    
     isProcessingRef.current = true;
     onProcessingChange(true);
     setIsListening(false);
     try { recognitionRef.current?.stop(); } catch (e) {}
-    setTranscript('MARIA_CALCULANDO...');
+    setTranscript('CALCULANDO_RESPOSTA...');
 
     try {
       const result = await aiVoiceInteraction(query);
@@ -149,6 +161,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         setTimeout(() => attemptRestart(), 2000);
       }
     } catch (err: any) {
+      setTranscript('ERRO_NO_LINK_NEURAL');
       isProcessingRef.current = false;
       attemptRestart();
     } finally {
@@ -164,7 +177,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
           <div className="flex items-center gap-2">
             <Zap className={cn("w-3 h-3 transition-all", isActive ? "text-primary animate-pulse" : "text-primary/20")} />
             <span className="text-[11px] font-headline font-bold text-primary tracking-[0.3em] uppercase">
-              {isActive ? "COMANDO_LIBERADO" : "SISTEMA_TRAVADO"}
+              {isActive ? "LINK_MARIA_ATIVO" : "NÚCLEO_DESLIGADO"}
             </span>
           </div>
           <div className="flex gap-3">
@@ -192,7 +205,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
             {!isActive ? (
               <div className="flex flex-col items-center gap-2">
                 <Power className="w-16 h-16 text-primary/40" />
-                <span className="text-[8px] font-black text-primary animate-pulse">LIGAR MARIA</span>
+                <span className="text-[8px] font-black text-primary animate-pulse">LIGAR_MARIA</span>
               </div>
             ) : isPlaying ? (
               <div className="flex gap-1.5 items-center justify-center h-full">
@@ -223,7 +236,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
           {isActive && <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary to-transparent animate-pulse" />}
           
           <p className="text-[14px] font-body text-primary leading-tight font-black tracking-tight drop-shadow-[0_0_5px_rgba(255,191,0,0.5)]">
-            {isPlaying && <span className="text-[9px] opacity-70 block mb-1 uppercase tracking-[0.4em] animate-pulse">Maria Transmitindo...</span>}
+            {isPlaying && <span className="text-[9px] opacity-70 block mb-1 uppercase tracking-[0.4em] animate-pulse">Transmitindo Áudio...</span>}
             {transcript}
           </p>
 
@@ -236,7 +249,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         </div>
 
         <div className="flex justify-between w-full text-[9px] font-code text-primary/50 uppercase tracking-[0.4em] font-black">
-          <span>MARIA_VOTZ_ACTV</span>
+          <span>MARIA_VOTZ_V2</span>
           <span className="flex items-center gap-2">RODRIGO_MEU_SENHOR <div className="w-1 h-1 rounded-full bg-primary animate-pulse" /></span>
         </div>
       </div>

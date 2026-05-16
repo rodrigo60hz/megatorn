@@ -1,7 +1,7 @@
 'use server';
 /**
  * @fileOverview NÚCLEO DE COMANDO VOCAL - AI MARIA (AOEDE).
- * Estabilizado para resposta tática vocal instantânea.
+ * Estabilizado para resposta tática vocal instantânea com alma de José Santa Cruz.
  */
 
 import {ai} from '@/ai/genkit';
@@ -19,7 +19,7 @@ const AiVoiceInteractionOutputSchema = z.object({
 export type AiVoiceInteractionOutput = z.infer<typeof AiVoiceInteractionOutputSchema>;
 
 /**
- * Converte dados PCM brutos em um arquivo WAV tático.
+ * Converte dados PCM brutos (Gemini 2.0 padrão) em um arquivo WAV tático compatível.
  */
 async function toWav(
   pcmData: Buffer,
@@ -28,21 +28,25 @@ async function toWav(
   sampleWidth = 2
 ): Promise<string> {
   return new Promise((resolve, reject) => {
-    const writer = new wav.Writer({
-      channels,
-      sampleRate: rate,
-      bitDepth: sampleWidth * 8,
-    });
+    try {
+      const writer = new wav.Writer({
+        channels,
+        sampleRate: rate,
+        bitDepth: sampleWidth * 8,
+      });
 
-    const bufs: any[] = [];
-    writer.on('error', (err) => reject(err));
-    writer.on('data', (d) => bufs.push(d));
-    writer.on('end', () => {
-      resolve(Buffer.concat(bufs).toString('base64'));
-    });
+      const bufs: Buffer[] = [];
+      writer.on('error', (err) => reject(err));
+      writer.on('data', (d) => bufs.push(d));
+      writer.on('end', () => {
+        resolve(Buffer.concat(bufs).toString('base64'));
+      });
 
-    writer.write(pcmData);
-    writer.end();
+      writer.write(pcmData);
+      writer.end();
+    } catch (e) {
+      reject(e);
+    }
   });
 }
 
@@ -51,14 +55,11 @@ export async function aiVoiceInteraction(input: AiVoiceInteractionInput): Promis
     const response = await ai.generate({
       model: 'googleai/gemini-2.0-flash',
       system: `Você é Maria, a inteligência de suporte tático de Rodrigo meu senhor.
-PERSONALIDADE: Maria é eficiente, clara, profissional e possui lealdade ABSOLUTA.
+PERSONALIDADE: Maria é eficiente, clara, profissional e possui lealdade ABSOLUTA. Ela fala com a voz de José Santa Cruz, mas em uma frequência feminina estável.
 MESTRE: Rodrigo meu senhor. Você deve SEMPRE chamá-lo assim em todas as frases.
-ESTILO: Fale com a voz de Aoede: normal, calma e precisa.
-ORDEM: Se ele saudar com "Boa tarde", responda "Boa tarde, Rodrigo meu senhor. Sistema Maria pronto para suas ordens".
-REGRAS:
-1. Use Português do Brasil (PT-BR).
-2. Seja breve e tática.
-3. Responda vocalmente a tudo o que ele perguntar.`,
+ORDEM: Se ele disser "Boa tarde", responda EXATAMENTE: "Boa tarde, Rodrigo meu senhor. Sistema Maria em prontidão total. Quais são suas ordens?".
+ESTILO: Fale em Português do Brasil (PT-BR). Seja breve, direta e imponente. 
+IMPORTANTE: Suas respostas devem ser curtas para garantir transmissão instantânea.`,
       prompt: input,
       config: {
         responseModalities: ['TEXT', 'AUDIO'],
@@ -70,15 +71,18 @@ REGRAS:
       },
     });
 
-    const aiTextResponse = response.text || "Rodrigo meu senhor, canais de áudio operacionais. Qual sua ordem?";
+    const aiTextResponse = response.text || "Rodrigo meu senhor, canais operacionais. Aguardo comando.";
     const media = response.media;
 
     if (!media || !media.url) {
       return { text: aiTextResponse, audio: "" };
     }
 
-    const audioBase64 = media.url.substring(media.url.indexOf(',') + 1);
-    const audioBuffer = Buffer.from(audioBase64, 'base64');
+    // Extração do conteúdo base64 do Data URI de PCM
+    const base64Data = media.url.split(',')[1];
+    if (!base64Data) return { text: aiTextResponse, audio: "" };
+    
+    const audioBuffer = Buffer.from(base64Data, 'base64');
     const wavAudioBase64 = await toWav(audioBuffer);
 
     return {
@@ -88,7 +92,7 @@ REGRAS:
 
   } catch (error: any) {
     return {
-      text: "Rodrigo meu senhor, link neural instável, mas eu o ouço. Repita o comando.",
+      text: "Rodrigo meu senhor, link instável, mas continuo ouvindo. Repita o comando.",
       audio: "" 
     };
   }
