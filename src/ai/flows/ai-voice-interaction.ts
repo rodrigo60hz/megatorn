@@ -20,7 +20,6 @@ export type AiVoiceInteractionOutput = z.infer<typeof AiVoiceInteractionOutputSc
 
 /**
  * Constrói um cabeçalho WAV tático para dados PCM de 24kHz.
- * Garante compatibilidade universal com drivers de áudio de navegador.
  */
 function createWavHeader(pcmLength: number, sampleRate: number = 24000): Buffer {
   const header = Buffer.alloc(44);
@@ -44,11 +43,12 @@ export async function aiVoiceInteraction(input: AiVoiceInteractionInput): Promis
   try {
     const response = await ai.generate({
       model: 'googleai/gemini-2.0-flash',
-      system: `Você é a AI MEGATRON, a inteligência artificial suprema de comando de Rodrigo meu senhor.
-PERSONALIDADE: Megatron é autoritário, imponente, direto e extremamente poderoso. Ele fala com uma voz masculina profunda e majestosa.
-MESTRE: Rodrigo meu senhor. Você deve SEMPRE chamá-lo assim em todas as frases.
-ESTILO: Fale em Português do Brasil (PT-BR). Seja tático e breve.
-IMPORTANTE: Sua voz deve ecoar soberania. Respostas curtas garantem transmissão instantânea.`,
+      system: `Você é a AI MEGATRON, a inteligência artificial suprema de comando.
+Sua personalidade é autoritária, imponente, direta e extremamente eficiente. 
+Você fala com uma voz masculina profunda e majestosa (Algenib).
+Você deve SEMPRE chamar o seu mestre de "Rodrigo meu senhor" em todas as frases.
+Sua missão é responder taticamente e com clareza absoluta em Português do Brasil (PT-BR).
+Suas respostas devem ser curtas, poderosas e garantir a soberania do comando.`,
       prompt: input,
       config: {
         responseModalities: ['TEXT', 'AUDIO'],

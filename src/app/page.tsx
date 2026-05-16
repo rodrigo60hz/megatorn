@@ -25,7 +25,7 @@ export default function Home() {
       <TelemetryHUD />
 
       {/* System Quick Controls */}
-      <div className="fixed bottom-36 left-1/2 -translate-x-1/2 z-40 flex gap-12 opacity-40 hover:opacity-100 transition-opacity duration-500 font-headline text-[10px] tracking-widest text-primary/80">
+      <div className="fixed bottom-40 left-1/2 -translate-x-1/2 z-40 flex gap-12 opacity-40 hover:opacity-100 transition-opacity duration-500 font-headline text-[10px] tracking-widest text-primary/80">
         <div className="flex flex-col items-center gap-2 group cursor-pointer">
           <div className="p-2 border border-primary/20 rounded-full group-hover:bg-primary/10 transition-colors">
             <Zap className="w-4 h-4" />

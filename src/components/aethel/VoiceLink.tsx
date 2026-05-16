@@ -15,6 +15,7 @@ declare global {
   }
 }
 
+// Pequeno sinal de áudio para desbloquear o contexto do navegador
 const SILENCE_WAV = "data:audio/wav;base64,UklGRigAAABXQVZFRm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YQQAAAAEAA==";
 
 export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: boolean) => void }) {
@@ -41,7 +42,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
     try {
       recognitionRef.current?.start();
     } catch (e) {
-      // Ignorar
+      // Ignorar erros de inicialização repetida
     }
   }, [isPlaying, isListening]);
 
@@ -69,7 +70,8 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         }
         const average = sum / bufferLength;
 
-        if (average > 80) { 
+        // Sensibilidade para detecção de impacto (palmas)
+        if (average > 85) { 
           const now = Date.now();
           if (now - lastClapTimeRef.current > 150) { 
             if (now - lastClapTimeRef.current < 800) {
@@ -125,9 +127,8 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       };
       audio.onended = () => {
         setIsPlaying(false);
-        // Reinicia reconhecimento após falar, se o sistema estiver ativo
         if (isSystemActiveRef.current) {
-          setTimeout(startRecognition, 500);
+          setTimeout(startRecognition, 600);
         }
       };
       audioRef.current = audio;
@@ -153,7 +154,6 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       isSystemActiveRef.current = true;
       setTranscript('MEGATRON_ONLINE (BATA 2 PALMAS)');
       
-      // Força desbloqueio de áudio com volume máximo
       if (audioRef.current) {
         audioRef.current.src = SILENCE_WAV;
         audioRef.current.play().catch(() => console.warn("AUDIO_INIT_PENDING"));
@@ -259,11 +259,11 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
              </div>
           </div>
           
-          <p className="text-xl font-body text-primary leading-tight font-black tracking-tight drop-shadow-[0_0_10px_rgba(255,191,0,0.4)] min-h-[60px] flex items-center">
+          <p className="text-xl font-body text-primary leading-tight font-black tracking-tight drop-shadow-[0_0_10px_rgba(255,191,0,0.4)] min-h-[60px] flex items-center justify-center">
             {transcript}
           </p>
 
-          {/* Hidden/Subtle Script Input for "Text I will place" */}
+          {/* Script Input Area */}
           {isActive && (
             <form onSubmit={handleScriptSubmit} className="mt-6 w-full relative group/input">
               <Terminal className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary/30" />
