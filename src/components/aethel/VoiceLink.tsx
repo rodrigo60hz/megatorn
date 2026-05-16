@@ -28,7 +28,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
       const recognition = new SpeechRecognition();
-      recognition.continuous = false; 
+      recognition.continuous = false; // Foco em comando único para resposta instantânea
       recognition.interimResults = false;
       recognition.lang = 'pt-BR';
 
@@ -49,6 +49,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
           console.error('Erro Sensorial:', event.error);
         }
         setIsListening(false);
+        // Reinício tático se o sistema estiver ativo e não estiver falando
         if (isSystemActiveRef.current && !isPlaying) {
           setTimeout(startListening, 150);
         }
@@ -56,6 +57,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
 
       recognition.onend = () => {
         setIsListening(false);
+        // Loop Infinito de Escuta: reinicia se estiver ativo e não estiver falando
         if (isSystemActiveRef.current && !isPlaying && !error) {
           startListening();
         }
@@ -74,7 +76,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       try {
         recognitionRef.current.start();
       } catch (e) {
-        // Ignorar se já iniciado
+        // Ignorar se já iniciado para evitar erros de estado do navegador
       }
     }
   };
@@ -96,7 +98,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       setError(null);
       setTranscript('ALMA_JOSÉ_SANTA_CRUZ_CONECTADA');
       
-      // Desbloqueia áudio para o navegador
+      // Desbloqueia áudio para o navegador com interação do usuário
       if (audioRef.current) {
         audioRef.current.play().catch(() => {});
         audioRef.current.pause();
@@ -118,7 +120,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       if (result.audio && audioRef.current) {
         audioRef.current.src = result.audio;
         setIsPlaying(true);
-        // Tenta tocar o áudio imediatamente
+        // Reprodução instantânea
         const playPromise = audioRef.current.play();
         if (playPromise !== undefined) {
           playPromise.catch(e => {
@@ -128,6 +130,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
           });
         }
       } else {
+        // Se não houver áudio, volta a ouvir imediatamente
         startListening();
       }
     } catch (err: any) {
@@ -141,7 +144,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
   const handleAudioEnd = () => {
     setIsPlaying(false);
     if (isSystemActiveRef.current) {
-      // Reinício instantâneo após Megatron falar
+      // Reinício imediato do microfone após Megatron terminar de falar
       setTimeout(startListening, 100);
     }
   };

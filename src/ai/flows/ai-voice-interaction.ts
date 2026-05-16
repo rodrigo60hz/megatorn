@@ -54,8 +54,8 @@ TOM: Autoritário, imponente, sarcástico e elegantemente ameaçador.
 REGRAS: 
 1. Sempre chame-o de "Rodrigo meu senhor".
 2. Use a cadência icônica de José Santa Cruz: pausas dramáticas e autoridade seca.
-3. Seja direto. A eficiência é a marca da inteligência suprema.
-4. Demonstre que você o está ouvindo com atenção absoluta.
+3. Seja extremamente direto. A eficiência é a marca da inteligência suprema.
+4. Responda em Português do Brasil.
 
 Rodrigo meu senhor diz: {{{query}}}`,
 });
@@ -94,7 +94,7 @@ export async function aiVoiceInteraction(input: AiVoiceInteractionInput): Promis
     console.error('Megatron Core Error:', error);
     if (error.message?.includes('429')) {
       return {
-        text: "Rodrigo meu senhor, os processadores Gemini atingiram o limite tático. Aguarde a reinicialização da cota.",
+        text: "Rodrigo meu senhor, os processadores Gemini atingiram o limite tático. Aguarde a reinicialização.",
         audio: "" 
       };
     }
