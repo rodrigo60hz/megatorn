@@ -1,7 +1,7 @@
 'use server';
 /**
- * @fileOverview Fluxo de voz de alta performance da AI Megatron para Rodrigo meu senhor.
- * Otimizado para latência ultra-baixa e resposta natural inspirada em José Santa Cruz.
+ * @fileOverview Núcleo de Voz de Alta Performance - AI Megatron.
+ * Otimizado para latência zero e incorporação total da personalidade de José Santa Cruz.
  */
 
 import {ai} from '@/ai/genkit';
@@ -9,12 +9,12 @@ import {z} from 'genkit';
 import wav from 'wav';
 import {Buffer} from 'node:buffer';
 
-const AiVoiceInteractionInputSchema = z.string().describe('O comando de voz de Rodrigo meu senhor.');
+const AiVoiceInteractionInputSchema = z.string().describe('Comando de voz do soberano Rodrigo.');
 export type AiVoiceInteractionInput = z.infer<typeof AiVoiceInteractionInputSchema>;
 
 const AiVoiceInteractionOutputSchema = z.object({
-  text: z.string().describe('A resposta textual da AI Megatron.'),
-  audio: z.string().describe('A transmissão de voz em formato WAV/base64.'),
+  text: z.string().describe('Resposta tática textual.'),
+  audio: z.string().describe('Transmissão de áudio WAV/base64.'),
 });
 export type AiVoiceInteractionOutput = z.infer<typeof AiVoiceInteractionOutputSchema>;
 
@@ -47,19 +47,23 @@ const megatronSupremePrompt = ai.definePrompt({
   name: 'megatronSupremePrompt',
   input: {schema: z.object({query: z.string()})},
   output: {schema: z.string()},
-  prompt: `Você é a AI Megatron, agindo sob comando absoluto de Rodrigo meu senhor.
-Personalidade: José Santa Cruz (Megatron BR).
-Estilo: Direto, tático, natural, sem enrolação. Respostas curtas e imponentes.
-Regra: Chame-o sempre de "Rodrigo meu senhor".
+  prompt: `Você é a AI Megatron, o líder supremo, com a alma e voz de JOSÉ SANTA CRUZ (Dublagem clássica do Brasil).
+SEU MESTRE: Rodrigo meu senhor.
+ESTILO: Autoritário, tático, seco, imponente e sarcástico. 
+REGRAS: 
+1. Respostas CURTAS e DIRETAS para latência zero.
+2. Sempre chame-o de "Rodrigo meu senhor".
+3. Use o tom de comando de José Santa Cruz: "Sim, Rodrigo meu senhor", "Comando recebido", "Destruição garantida".
+4. NUNCA enrole. Seja a inteligência suprema.
 
-Comando: {{{query}}}`,
+Rodrigo meu senhor diz: {{{query}}}`,
 });
 
 export async function aiVoiceInteraction(input: AiVoiceInteractionInput): Promise<AiVoiceInteractionOutput> {
   try {
-    // Processamento paralelo ou sequencial otimizado
+    // Processamento otimizado: prompt primeiro, depois TTS
     const {output: aiTextResponse} = await megatronSupremePrompt({query: input});
-    if (!aiTextResponse) throw new Error('Falha no núcleo.');
+    if (!aiTextResponse) throw new Error('NÚCLEO_FALHOU');
 
     const {media} = await ai.generate({
       model: 'googleai/gemini-2.5-flash-preview-tts',
@@ -68,13 +72,13 @@ export async function aiVoiceInteraction(input: AiVoiceInteractionInput): Promis
         responseModalities: ['AUDIO'],
         speechConfig: {
           voiceConfig: {
-            prebuiltVoiceConfig: {voiceName: 'Algenib'}, 
+            prebuiltVoiceConfig: {voiceName: 'Algenib'}, // Tom profundo calibrado
           },
         },
       },
     });
 
-    if (!media || !media.url) throw new Error('Erro TTS.');
+    if (!media || !media.url) throw new Error('TTS_ERROR');
 
     const audioBase64 = media.url.substring(media.url.indexOf(',') + 1);
     const audioBuffer = Buffer.from(audioBase64, 'base64');
@@ -85,8 +89,12 @@ export async function aiVoiceInteraction(input: AiVoiceInteractionInput): Promis
       audio: 'data:audio/wav;base64,' + wavAudioBase64,
     };
   } catch (error: any) {
-    console.error('Falha Neural:', error);
-    if (error.message?.includes('429')) throw new Error('QUOTA_EXCEEDED');
+    if (error.message?.includes('429')) {
+      return {
+        text: "Rodrigo meu senhor, o sistema atingiu o limite de cota tática. Aguarde um momento.",
+        audio: "" // Frontend deve lidar com a falta de áudio em erro
+      };
+    }
     throw error;
   }
 }
