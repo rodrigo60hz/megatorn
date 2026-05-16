@@ -16,7 +16,7 @@ declare global {
   }
 }
 
-// Pequeno sinal de áudio para desbloquear o contexto do navegador
+// Sinal sônico de ativação para desbloquear drivers de áudio
 const SILENCE_WAV = "data:audio/wav;base64,UklGRigAAABXQVZFRm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YQQAAAAEAA==";
 
 export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: boolean) => void }) {
@@ -44,13 +44,18 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
     try {
       recognitionRef.current?.start();
     } catch (e) {
-      // Ignorar erros de inicialização repetida
+      // Falha silenciosa de inicialização
     }
   }, [isPlaying, isListening]);
 
   const initClapDetection = async () => {
     try {
-      if (audioContextRef.current?.state === 'suspended') {
+      if (!audioContextRef.current) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        audioContextRef.current = new AudioContextClass();
+      }
+
+      if (audioContextRef.current.state === 'suspended') {
         await audioContextRef.current.resume();
       }
 
@@ -58,12 +63,8 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         micStreamRef.current = stream;
         
-        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-        const audioContext = new AudioContextClass();
-        audioContextRef.current = audioContext;
-
-        const source = audioContext.createMediaStreamSource(stream);
-        const analyser = audioContext.createAnalyser();
+        const source = audioContextRef.current.createMediaStreamSource(stream);
+        const analyser = audioContextRef.current.createAnalyser();
         analyser.fftSize = 256;
         source.connect(analyser);
         analyserRef.current = analyser;
@@ -81,7 +82,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
           }
           const average = sum / bufferLength;
 
-          // Sensibilidade para detecção de impacto (palmas)
+          // Sensibilidade tática para detecção de palmas
           if (average > 85) { 
             const now = Date.now();
             if (now - lastClapTimeRef.current > 150) { 
@@ -107,7 +108,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         checkAudio();
       }
     } catch (err) {
-      console.warn("SENSOR_ACUSTICO_OFF");
+      console.warn("SENSOR_ACUSTICO_OFF_DRIVERS_BUSY");
     }
   };
 
@@ -140,7 +141,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       audio.onended = () => {
         setIsPlaying(false);
         if (isSystemActiveRef.current) {
-          setTimeout(startRecognition, 600);
+          setTimeout(startRecognition, 400);
         }
       };
       audioRef.current = audio;
@@ -168,9 +169,10 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       isSystemActiveRef.current = true;
       setTranscript('MEGATRON_ONLINE (BATA 2 PALMAS)');
       
+      // Benção de Áudio: Força o navegador a permitir reprodução
       if (audioRef.current) {
         audioRef.current.src = SILENCE_WAV;
-        await audioRef.current.play().catch(() => console.warn("AUDIO_INIT_PENDING"));
+        audioRef.current.play().catch(() => console.warn("AUDIO_CONTEXT_PREWARM_FAILED"));
       }
       initClapDetection();
     }
@@ -187,10 +189,20 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       setTranscript(result.text);
       
       if (result.audio && audioRef.current) {
-        // Garantir que o áudio anterior parou
+        // Interrupção tática de segurança
         audioRef.current.pause();
         audioRef.current.src = result.audio;
-        await audioRef.current.play().catch(e => console.error("ERRO_VOZ_MEGATRON:", e));
+        
+        // Reprodução com garantia de ativação
+        const playPromise = audioRef.current.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(e => {
+            console.error("ERRO_VOZ_MEGATRON_DRIVER_LOCK:", e);
+            setTranscript("SISTEMA BLOQUEADO PELO NAVEGADOR");
+          });
+        }
+      } else {
+         setTranscript(result.text + " (SEM ÁUDIO DISPONÍVEL)");
       }
     } catch (err) {
       setTranscript('FALHA_UPLINK_NEURAL');
@@ -212,7 +224,6 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
     <div className="fixed inset-0 pointer-events-none flex items-center justify-center">
       <div className="pointer-events-auto flex flex-col items-center gap-8 animate-in zoom-in duration-1000">
         
-        {/* Central Interaction Hub */}
         <div className="relative group">
           <div className={cn(
             "absolute inset-0 rounded-full bg-primary/40 blur-[80px] scale-150 transition-opacity duration-1000",
@@ -262,7 +273,6 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
           </Button>
         </div>
 
-        {/* Status Display */}
         <div className="w-[450px] bg-black/80 backdrop-blur-md rounded-2xl p-8 border-2 border-primary/50 flex flex-col items-center text-center shadow-[0_0_100px_rgba(255,191,0,0.2)]">
           <div className="flex justify-between w-full mb-4 opacity-50 text-[10px] font-code tracking-[0.5em] font-black">
              <div className="flex items-center gap-2">
@@ -279,7 +289,6 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
             {transcript}
           </p>
 
-          {/* Script Input Area */}
           {isActive && (
             <form onSubmit={handleScriptSubmit} className="mt-6 w-full relative group/input">
               <Terminal className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary/30" />
