@@ -24,6 +24,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
   const isSystemActiveRef = useRef(false);
   const restartTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Inicialização do Reconhecimento e Áudio
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
@@ -43,18 +44,14 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         }
       };
 
-      recognition.onerror = (event: any) => {
+      recognition.onerror = () => {
         setIsListening(false);
-        if (isSystemActiveRef.current && !isPlaying) {
-          attemptRestart();
-        }
+        if (isSystemActiveRef.current && !isPlaying) attemptRestart();
       };
 
       recognition.onend = () => {
         setIsListening(false);
-        if (isSystemActiveRef.current && !isPlaying) {
-          attemptRestart();
-        }
+        if (isSystemActiveRef.current && !isPlaying) attemptRestart();
       };
 
       recognitionRef.current = recognition;
@@ -62,7 +59,6 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
 
     if (!audioRef.current) {
       const audio = new Audio();
-      audio.autoplay = false;
       audio.onended = () => {
         setIsPlaying(false);
         if (isSystemActiveRef.current) attemptRestart();
@@ -71,7 +67,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
     }
 
     return () => {
-      if (recognitionRef.current) recognitionRef.current.abort();
+      recognitionRef.current?.abort();
       if (restartTimeoutRef.current) clearTimeout(restartTimeoutRef.current);
     };
   }, [isPlaying]);
@@ -83,7 +79,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         try {
           recognitionRef.current?.start();
         } catch (e) {}
-      }, 50); // Reinício ultra-rápido para escuta contínua
+      }, 100);
     }
   };
 
@@ -103,14 +99,14 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       isSystemActiveRef.current = true;
       setTranscript('LINK_NEURAL_ONLINE');
       
-      // FORÇAR desbloqueio de áudio por interação do Rodrigo
+      // DESBLOQUEIO AGRESSIVO DE ÁUDIO (Necessário para navegadores)
       if (audioRef.current) {
         audioRef.current.play().then(() => {
           audioRef.current?.pause();
         }).catch(() => {});
       }
       
-      setTimeout(() => attemptRestart(), 300);
+      setTimeout(() => attemptRestart(), 500);
     }
   };
 
@@ -126,13 +122,10 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       if (result.audio && audioRef.current) {
         audioRef.current.src = result.audio;
         setIsPlaying(true);
-        const playPromise = audioRef.current.play();
-        if (playPromise !== undefined) {
-          playPromise.catch(e => {
-            setIsPlaying(false);
-            attemptRestart();
-          });
-        }
+        audioRef.current.play().catch(() => {
+          setIsPlaying(false);
+          attemptRestart();
+        });
       } else {
         attemptRestart();
       }
@@ -179,7 +172,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
               <Power className="w-16 h-16 text-primary/40" />
             ) : isPlaying ? (
               <div className="flex gap-1.5 items-center justify-center h-full">
-                {[1, 2, 3, 4, 5, 6, 7].map(i => (
+                {[1, 2, 3, 4, 5].map(i => (
                   <div 
                     key={i} 
                     className="w-2.5 bg-primary rounded-full animate-bounce" 

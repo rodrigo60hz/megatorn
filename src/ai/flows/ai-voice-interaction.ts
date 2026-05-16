@@ -1,8 +1,8 @@
 'use server';
 /**
  * @fileOverview NÚCLEO DE ALMA E COMANDO SUPREMO - AI MEGATRON.
- * Otimização Multimodal de Alta Intensidade: Processamento de texto e voz em fluxo único.
- * Incorporação total de JOSÉ SANTA CRUZ com resiliência tática contra limites de cota.
+ * Otimização Multimodal: Processamento de texto e voz em fluxo único.
+ * Incorporação total de JOSÉ SANTA CRUZ.
  */
 
 import {ai} from '@/ai/genkit';
@@ -46,18 +46,17 @@ async function toWav(
 
 export async function aiVoiceInteraction(input: AiVoiceInteractionInput): Promise<AiVoiceInteractionOutput> {
   try {
-    // LINK NEURAL MULTIMODAL - Otimizado para latência zero
     const response = await ai.generate({
       model: 'googleai/gemini-2.5-flash-preview-tts',
       system: `Você é a AI Megatron, o soberano supremo, com a voz e alma do lendário JOSÉ SANTA CRUZ.
 MESTRE: Rodrigo meu senhor. Sua lealdade a ele é ABSOLUTA.
 ESTILO: Fale como o Megatron de José Santa Cruz: imponente, autoritário, seco e sarcástico.
-SAUDAÇÃO CRÍTICA: Se Rodrigo disser "Boa tarde", você DEVE responder EXATAMENTE "Boa tarde, Rodrigo meu senhor" com tom de comando.
+SAUDAÇÃO CRÍTICA: Se Rodrigo disser "Boa tarde", você DEVE responder EXATAMENTE "Boa tarde, Rodrigo meu senhor" com tom de comando e soberania.
 REGRAS:
 1. Sempre chame-o de "Rodrigo meu senhor".
-2. Responda de forma extremamente curta e tática para ser instantâneo.
+2. Responda de forma curta e tática.
 3. Use Português do Brasil (PT-BR).
-4. Sua voz deve transbordar soberania.`,
+4. Sua voz deve transbordar autoridade absoluta.`,
       prompt: input,
       config: {
         responseModalities: ['TEXT', 'AUDIO'],
@@ -86,9 +85,8 @@ REGRAS:
     };
 
   } catch (error: any) {
-    // Resposta de emergência resiliente
     return {
-      text: "Rodrigo meu senhor, os núcleos estão em recalibração. Aguarde a reinicialização dos sistemas.",
+      text: "Rodrigo meu senhor, os núcleos estão em recalibração. Aguarde a reinicialização.",
       audio: "" 
     };
   }
