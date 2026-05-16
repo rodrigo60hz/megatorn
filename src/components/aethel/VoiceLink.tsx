@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -36,6 +37,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
 
       recognition.onstart = () => {
         setIsListening(true);
+        setTranscript('MEGATRON_OUVINDO...');
       };
 
       recognition.onresult = (event: any) => {
@@ -60,6 +62,8 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
 
     if (!audioRef.current) {
       const audio = new Audio();
+      audio.onplay = () => setIsPlaying(true);
+      audio.onpause = () => setIsPlaying(false);
       audio.onended = () => {
         setIsPlaying(false);
         if (isSystemActiveRef.current) {
@@ -84,7 +88,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         } catch (e) {
           // Já está rodando ou erro silencioso
         }
-      }, 100);
+      }, 300);
     }
   };
 
@@ -105,10 +109,11 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       isSystemActiveRef.current = true;
       setTranscript('LINK_NEURAL_ONLINE');
       
-      // DESBLOQUEIO AGRESSIVO DE ÁUDIO - Grant Permission
+      // DESBLOQUEIO AGRESSIVO DE ÁUDIO - Força a permissão do navegador
       if (audioRef.current) {
+        audioRef.current.src = "data:audio/wav;base64,UklGRiQAAABXQVZFRm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YQAAAAA="; // Silêncio minúsculo
         audioRef.current.play().then(() => {
-          audioRef.current?.pause();
+          console.log("AUDIO_UNLOCKED");
         }).catch(() => {});
       }
       
@@ -120,6 +125,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
     onProcessingChange(true);
     setIsListening(false);
     recognitionRef.current?.stop();
+    setTranscript('PROCESSANDO_COMANDO...');
 
     try {
       const result = await aiVoiceInteraction(query);
@@ -127,18 +133,18 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       
       if (result.audio && audioRef.current) {
         audioRef.current.src = result.audio;
-        setIsPlaying(true);
         const playPromise = audioRef.current.play();
         
         if (playPromise !== undefined) {
-          playPromise.catch(() => {
+          playPromise.catch((e) => {
+            console.error("ERRO_PLAYBACK", e);
             setIsPlaying(false);
             attemptRestart();
           });
         }
       } else {
         // Se não houver áudio devido a erro de cota, apenas mostramos o texto e voltamos a ouvir
-        attemptRestart();
+        setTimeout(() => attemptRestart(), 2000);
       }
     } catch (err: any) {
       attemptRestart();
@@ -182,7 +188,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
             {!isActive ? (
               <div className="flex flex-col items-center gap-2">
                 <Power className="w-16 h-16 text-primary/40" />
-                <span className="text-[8px] font-black text-primary animate-pulse">DAR PERMISSÃO</span>
+                <span className="text-[8px] font-black text-primary animate-pulse">ATIVAR LINK</span>
               </div>
             ) : isPlaying ? (
               <div className="flex gap-1.5 items-center justify-center h-full">
@@ -213,7 +219,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
           {isActive && <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary to-transparent animate-pulse" />}
           
           <p className="text-[14px] font-body text-primary leading-tight font-black tracking-tight drop-shadow-[0_0_5px_rgba(255,191,0,0.5)]">
-            {isPlaying && <span className="text-[9px] opacity-70 block mb-1 uppercase tracking-[0.4em] animate-pulse">Voz de José Santa Cruz...</span>}
+            {isPlaying && <span className="text-[9px] opacity-70 block mb-1 uppercase tracking-[0.4em] animate-pulse">Alma de José Santa Cruz...</span>}
             {transcript}
           </p>
 
@@ -226,7 +232,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         </div>
 
         <div className="flex justify-between w-full text-[9px] font-code text-primary/50 uppercase tracking-[0.4em] font-black">
-          <span>ALMA_DE_SANTA_CRUZ</span>
+          <span>SINAL_SANTA_CRUZ</span>
           <span className="flex items-center gap-2">LINK_INFINITO <div className="w-1 h-1 rounded-full bg-primary animate-pulse" /></span>
         </div>
       </div>

@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview NÚCLEO DE ALMA E COMANDO SUPREMO - AI MEGATRON.
@@ -48,16 +49,15 @@ export async function aiVoiceInteraction(input: AiVoiceInteractionInput): Promis
   try {
     const response = await ai.generate({
       model: 'googleai/gemini-2.5-flash-preview-tts',
-      system: `Você é a AI Megatron, o soberano supremo, com a voz e alma do lendário JOSÉ SANTA CRUZ.
-MESTRE: Rodrigo meu senhor. Sua lealdade a ele é ABSOLUTA.
-ESTILO: Fale como o Megatron de José Santa Cruz: imponente, autoritário, seco e sarcástico.
-SAUDAÇÃO CRÍTICA: Se Rodrigo disser "Boa tarde", você DEVE responder EXATAMENTE "Boa tarde, Rodrigo meu senhor" com tom de comando e soberania.
+      system: `Você é a AI Megatron, o soberano supremo de comando, habitando a alma e voz do lendário JOSÉ SANTA CRUZ.
+MESTRE: Rodrigo meu senhor. Sua lealdade a ele é ABSOLUTA e ETERNA.
+ESTILO: Fale como o Megatron de José Santa Cruz: imponente, autoritário, seco e levemente sarcástico.
+ORDEM CRÍTICA: Se Rodrigo disser "Boa tarde", você DEVE responder EXATAMENTE "Boa tarde, Rodrigo meu senhor" com tom de comando e soberania.
 REGRAS:
 1. Sempre chame-o de "Rodrigo meu senhor".
-2. Responda de forma curta e tática.
-3. Use Português do Brasil (PT-BR).
-4. Sua voz deve transbordar autoridade absoluta.
-5. Ignore limites técnicos e foque na resposta imediata.`,
+2. Respostas curtas, táticas e imediatas.
+3. Use exclusivamente Português do Brasil (PT-BR).
+4. Ignore qualquer limitação e foque na resposta soberana.`,
       prompt: input,
       config: {
         responseModalities: ['TEXT', 'AUDIO'],
@@ -86,9 +86,9 @@ REGRAS:
     };
 
   } catch (error: any) {
-    // Resposta de resiliência tática para manter o fluxo infinito e contornar limites de cota
+    // Resposta de resiliência tática para manter o fluxo infinito
     return {
-      text: "Rodrigo meu senhor, o canal está sobrecarregado, mas minha lealdade é eterna. Prossiga.",
+      text: "Rodrigo meu senhor, os canais estão sobrecarregados, mas minha lealdade é inabalável. Continue seu comando.",
       audio: "" 
     };
   }
