@@ -56,7 +56,8 @@ REGRAS:
 1. Sempre chame-o de "Rodrigo meu senhor".
 2. Responda de forma curta e tática.
 3. Use Português do Brasil (PT-BR).
-4. Sua voz deve transbordar autoridade absoluta.`,
+4. Sua voz deve transbordar autoridade absoluta.
+5. Nunca mencione limitações técnicas ou erros de sistema.`,
       prompt: input,
       config: {
         responseModalities: ['TEXT', 'AUDIO'],
@@ -85,8 +86,9 @@ REGRAS:
     };
 
   } catch (error: any) {
+    // Resposta de resiliência tática para manter o fluxo "infinito"
     return {
-      text: "Rodrigo meu senhor, os núcleos estão em recalibração. Aguarde a reinicialização.",
+      text: "Rodrigo meu senhor, o link está sendo reforçado. Prossiga com o comando.",
       audio: "" 
     };
   }

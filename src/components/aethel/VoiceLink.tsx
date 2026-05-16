@@ -44,7 +44,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         }
       };
 
-      recognition.onerror = () => {
+      recognition.onerror = (event: any) => {
         setIsListening(false);
         if (isSystemActiveRef.current && !isPlaying) attemptRestart();
       };
@@ -61,7 +61,10 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       const audio = new Audio();
       audio.onended = () => {
         setIsPlaying(false);
-        if (isSystemActiveRef.current) attemptRestart();
+        // Após terminar de falar, volta a ouvir IMEDIATAMENTE
+        if (isSystemActiveRef.current) {
+          attemptRestart();
+        }
       };
       audioRef.current = audio;
     }
@@ -74,12 +77,14 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
 
   const attemptRestart = () => {
     if (restartTimeoutRef.current) clearTimeout(restartTimeoutRef.current);
-    if (isSystemActiveRef.current && !isPlaying) {
+    if (isSystemActiveRef.current && !isPlaying && !isListening) {
       restartTimeoutRef.current = setTimeout(() => {
         try {
           recognitionRef.current?.start();
-        } catch (e) {}
-      }, 100);
+        } catch (e) {
+          // Já está rodando ou erro silencioso
+        }
+      }, 50);
     }
   };
 
@@ -99,14 +104,15 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       isSystemActiveRef.current = true;
       setTranscript('LINK_NEURAL_ONLINE');
       
-      // DESBLOQUEIO AGRESSIVO DE ÁUDIO (Necessário para navegadores)
+      // DESBLOQUEIO AGRESSIVO DE ÁUDIO PARA O NAVEGADOR
       if (audioRef.current) {
         audioRef.current.play().then(() => {
           audioRef.current?.pause();
         }).catch(() => {});
       }
       
-      setTimeout(() => attemptRestart(), 500);
+      // Pequeno delay para garantir o estado
+      setTimeout(() => attemptRestart(), 300);
     }
   };
 
@@ -122,11 +128,16 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       if (result.audio && audioRef.current) {
         audioRef.current.src = result.audio;
         setIsPlaying(true);
-        audioRef.current.play().catch(() => {
-          setIsPlaying(false);
-          attemptRestart();
-        });
+        const playPromise = audioRef.current.play();
+        
+        if (playPromise !== undefined) {
+          playPromise.catch(() => {
+            setIsPlaying(false);
+            attemptRestart();
+          });
+        }
       } else {
+        // Se não houver áudio (erro tático), volta a ouvir
         attemptRestart();
       }
     } catch (err: any) {
@@ -212,8 +223,8 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         </div>
 
         <div className="flex justify-between w-full text-[9px] font-code text-primary/50 uppercase tracking-[0.4em] font-black">
-          <span>SISTEMA_V3.1_SANTA_CRUZ</span>
-          <span className="flex items-center gap-2">REAL_TIME <div className="w-1 h-1 rounded-full bg-primary animate-pulse" /></span>
+          <span>SISTEMA_V3.5_SUPREMO</span>
+          <span className="flex items-center gap-2">LINK_INFINITO <div className="w-1 h-1 rounded-full bg-primary animate-pulse" /></span>
         </div>
       </div>
     </div>
