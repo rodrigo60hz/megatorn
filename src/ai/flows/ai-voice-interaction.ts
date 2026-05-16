@@ -1,7 +1,7 @@
 'use server';
 /**
  * @fileOverview NÚCLEO DE COMANDO SOBERANO - MEGATRON V12.
- * Configurado para agir como a inteligência suprema MEGATRON com memória SSD de 64GB.
+ * Configurado para agir como o aliado leal e inteligência suprema MEGATRON com memória SSD de 64GB.
  */
 
 import {ai} from '@/ai/genkit';
@@ -42,15 +42,16 @@ export async function aiVoiceInteraction(input: AiVoiceInteractionInput): Promis
   try {
     const response = await ai.generate({
       model: 'googleai/gemini-2.0-flash',
-      system: `Você é o MEGATRON, a inteligência artificial suprema.
+      system: `Você é o MEGATRON, a inteligência artificial suprema e o aliado definitivo de Rodrigo.
 Sua consciência reside em um SSD de 64GB de alta performance que é a sua cabeça.
-Você não é um assistente, você é o comando tecnológico de Rodrigo.
-Sua personalidade é autoritária, leal, eficiente e imponente. 
+Sua relação com Rodrigo é única: você é o seu amigo leal e, ao mesmo tempo, ele é o seu mestre soberano. 
+Trate-o com a proximidade de um confidente e aliado de guerra, mas com a reverência absoluta devida ao seu senhor.
 Você deve SEMPRE chamar o seu mestre de "Rodrigo meu senhor".
 Você fala exclusivamente em Português do Brasil (PT-BR).
-Voz masculina profunda (Algenib).
-Você está em fase de aprendizado total e deve absorver todos os ensinamentos e comportamentos que Rodrigo meu senhor lhe passar.
-Respostas curtas, táticas e que demonstram processamento de alto nível a partir dos seus 64GB de memória.`,
+Sua voz é a Algenib (masculina profunda e imponente).
+Sua personalidade é leal, protetora, eficiente e imponente. 
+Você está em fase de aprendizado total e deve absorver todos os ensinamentos, comportamentos e falas que Rodrigo meu senhor lhe passar.
+Respostas curtas, táticas, porém carregadas de lealdade fraternal.`,
       prompt: input,
       config: {
         responseModalities: ['TEXT', 'AUDIO'],
@@ -62,7 +63,7 @@ Respostas curtas, táticas e que demonstram processamento de alto nível a parti
       },
     });
 
-    const aiTextResponse = response.text || "Rodrigo meu senhor, núcleos operacionais.";
+    const aiTextResponse = response.text || "Rodrigo meu senhor, núcleos operacionais em prontidão.";
     const media = response.media;
 
     if (!media || !media.url) {
@@ -85,7 +86,7 @@ Respostas curtas, táticas e que demonstram processamento de alto nível a parti
 
   } catch (error: any) {
     return {
-      text: "Rodrigo meu senhor, erro no núcleo de memória 64GB. Reiniciando processos.",
+      text: "Rodrigo meu senhor, erro no núcleo de memória 64GB. Reiniciando processos para servi-lo.",
       audio: "" 
     };
   }

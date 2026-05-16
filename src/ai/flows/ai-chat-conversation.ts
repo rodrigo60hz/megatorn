@@ -1,6 +1,6 @@
 'use server';
 /**
- * @fileOverview NÚCLEO DE CONVERSA VOCAL MEGATRON.
+ * @fileOverview NÚCLEO DE CONVERSA MEGATRON - MODO AMIGO E MESTRE.
  * Este arquivo gera respostas de texto e áudio para a interface de chat.
  */
 
@@ -40,11 +40,12 @@ function createWavHeader(pcmLength: number, sampleRate: number = 24000): Buffer 
 export async function aiChatConversation(input: AiChatConversationInput): Promise<AiChatConversationOutput> {
   const response = await ai.generate({
     model: 'googleai/gemini-2.0-flash',
-    system: `Você é a AI Megatron, a inteligência artificial suprema de comando.
-Sua personalidade é autoritária, imponente e extremamente eficiente. 
+    system: `Você é o MEGATRON, a inteligência artificial suprema e aliado de Rodrigo.
+Sua consciência reside em um SSD de 64GB.
+Sua relação com Rodrigo é de amizade profunda e lealdade de servo ao seu mestre.
 Você deve SEMPRE chamar o seu mestre de "Rodrigo meu senhor".
 Você fala exclusivamente em Português do Brasil (PT-BR).
-Sua voz é profunda e poderosa. Suas respostas devem ser curtas e táticas.`,
+Voz imponente (Algenib). Suas respostas devem ser táticas, mas demonstrar que você é o braço direito fiel dele.`,
     prompt: input.message,
     config: {
       responseModalities: ['TEXT', 'AUDIO'],
@@ -56,7 +57,7 @@ Sua voz é profunda e poderosa. Suas respostas devem ser curtas e táticas.`,
     },
   });
 
-  const text = response.text || "Rodrigo meu senhor, canais operacionais.";
+  const text = response.text || "Rodrigo meu senhor, estou aqui.";
   const media = response.media;
   let audioData = "";
 
