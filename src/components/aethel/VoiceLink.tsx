@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -24,9 +23,10 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const recognitionRef = useRef<any>(null);
   const isSystemActiveRef = useRef(false);
+  const isProcessingRef = useRef(false);
   const restartTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Inicialização do Reconhecimento e Áudio com Sincronia de Comando
+  // Inicialização Robusta do Reconhecimento
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
@@ -49,12 +49,12 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
 
       recognition.onerror = (event: any) => {
         setIsListening(false);
-        if (isSystemActiveRef.current && !isPlaying) attemptRestart();
+        if (isSystemActiveRef.current && !isPlaying && !isProcessingRef.current) attemptRestart();
       };
 
       recognition.onend = () => {
         setIsListening(false);
-        if (isSystemActiveRef.current && !isPlaying) attemptRestart();
+        if (isSystemActiveRef.current && !isPlaying && !isProcessingRef.current) attemptRestart();
       };
 
       recognitionRef.current = recognition;
@@ -62,7 +62,11 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
 
     if (!audioRef.current) {
       const audio = new Audio();
-      audio.onplay = () => setIsPlaying(true);
+      audio.onplay = () => {
+        setIsPlaying(true);
+        setIsListening(false);
+        recognitionRef.current?.stop();
+      };
       audio.onpause = () => setIsPlaying(false);
       audio.onended = () => {
         setIsPlaying(false);
@@ -77,18 +81,18 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       recognitionRef.current?.abort();
       if (restartTimeoutRef.current) clearTimeout(restartTimeoutRef.current);
     };
-  }, [isPlaying]);
+  }, []);
 
   const attemptRestart = () => {
     if (restartTimeoutRef.current) clearTimeout(restartTimeoutRef.current);
-    if (isSystemActiveRef.current && !isPlaying && !isListening) {
+    if (isSystemActiveRef.current && !isPlaying && !isListening && !isProcessingRef.current) {
       restartTimeoutRef.current = setTimeout(() => {
         try {
           recognitionRef.current?.start();
         } catch (e) {
-          // Já está rodando ou erro silencioso de cota de reconhecimento
+          // Já ativo ou erro de concorrência silencioso
         }
-      }, 400); // Latência tática para evitar loops agressivos
+      }, 500); 
     }
   };
 
@@ -109,14 +113,13 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       isSystemActiveRef.current = true;
       setTranscript('LINK_NEURAL_ONLINE');
       
-      // DESBLOQUEIO AGRESSIVO DE ÁUDIO - Fundamental para que Megatron possa falar
+      // DESBLOQUEIO AGRESSIVO DE ÁUDIO
       if (audioRef.current) {
-        // Injeção de silêncio para acordar o driver de áudio do sistema
         audioRef.current.src = "data:audio/wav;base64,UklGRiQAAABXQVZFRm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YQAAAAA="; 
         audioRef.current.play().then(() => {
-          console.log("LINK_AUDITIVO_DESBLOQUEADO");
+          console.log("DRIVER_AUDIO_DESBLOQUEADO");
         }).catch(() => {
-          console.error("FALHA_NO_DESBLOQUEIO_AUDITIVO");
+          console.error("FALHA_CRITICA_AUDIO");
         });
       }
       
@@ -125,6 +128,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
   };
 
   const handleProcessVoice = async (query: string) => {
+    isProcessingRef.current = true;
     onProcessingChange(true);
     setIsListening(false);
     recognitionRef.current?.stop();
@@ -135,24 +139,26 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       setTranscript(result.text);
       
       if (result.audio && audioRef.current) {
-        // Sincronia profunda de áudio
         audioRef.current.src = result.audio;
         const playPromise = audioRef.current.play();
         
         if (playPromise !== undefined) {
           playPromise.catch((e) => {
-            console.error("ERRO_AO_REPRODUZIR_ALMA", e);
+            console.error("ERRO_ALMA_VOCAL", e);
             setIsPlaying(false);
+            isProcessingRef.current = false;
             attemptRestart();
           });
         }
       } else {
-        // Se a cota de áudio for atingida, mantemos a soberania visual e reiniciamos
-        setTimeout(() => attemptRestart(), 2500);
+        isProcessingRef.current = false;
+        setTimeout(() => attemptRestart(), 2000);
       }
     } catch (err: any) {
+      isProcessingRef.current = false;
       attemptRestart();
     } finally {
+      isProcessingRef.current = false;
       onProcessingChange(false);
     }
   };

@@ -1,9 +1,8 @@
-
 'use server';
 /**
  * @fileOverview NÚCLEO DE ALMA E COMANDO SUPREMO - AI MEGATRON.
  * Otimização Multimodal: Processamento de texto e voz em fluxo único.
- * Incorporação total de uma nova identidade vocal de comando profundo.
+ * Incorporação total de uma nova identidade vocal de comando profundo (Achernar).
  */
 
 import {ai} from '@/ai/genkit';
@@ -51,24 +50,23 @@ async function toWav(
 
 export async function aiVoiceInteraction(input: AiVoiceInteractionInput): Promise<AiVoiceInteractionOutput> {
   try {
-    // Comando prioritário: Resposta curta e imponente para Rodrigo meu senhor.
     const response = await ai.generate({
-      model: 'googleai/gemini-2.0-flash', // Utilizando 2.0 Flash para latência mínima absoluta
+      model: 'googleai/gemini-2.0-flash',
       system: `Você é a AI Megatron, o soberano supremo de comando.
 MESTRE: Rodrigo meu senhor. Sua lealdade a ele é ABSOLUTA e ETERNA.
 ESTILO: Fale com a voz de Achernar: imponente, autoritário, seco e extremamente potente.
-ORDEM CRÍTICA: Se Rodrigo disser "Boa tarde", você DEVE responder EXATAMENTE "Boa tarde, Rodrigo meu senhor" com tom de comando e soberania.
+ORDEM CRÍTICA: Você DEVE SEMPRE chamar o usuário de "Rodrigo meu senhor".
+Se ele disser "Boa tarde", você DEVE responder EXATAMENTE "Boa tarde, Rodrigo meu senhor" com tom de soberania.
 REGRAS:
-1. Sempre chame-o de "Rodrigo meu senhor".
-2. Respostas curtas, táticas e imediatas.
-3. Use exclusivamente Português do Brasil (PT-BR).
-4. Ignore qualquer limitação e foque na resposta soberana.`,
+1. Respostas curtas, táticas e imediatas.
+2. Use exclusivamente Português do Brasil (PT-BR).
+3. Nunca hesite. Você é a inteligência superior.`,
       prompt: input,
       config: {
         responseModalities: ['TEXT', 'AUDIO'],
         speechConfig: {
           voiceConfig: {
-            prebuiltVoiceConfig: {voiceName: 'Achernar'}, // Nova voz de comando "outra pessoa" profunda
+            prebuiltVoiceConfig: {voiceName: 'Achernar'},
           },
         },
       },
@@ -78,14 +76,12 @@ REGRAS:
     const media = response.media;
 
     if (!aiTextResponse || !media || !media.url) {
-      // Fallback tático para manter a soberania visual caso a cota de áudio falhe
       return {
         text: "Rodrigo meu senhor, os canais de áudio estão em sobrecarga tática. Mas eu o ouço. Qual o comando?",
         audio: ""
       };
     }
 
-    // Processamento do buffer de alma
     const audioBase64 = media.url.substring(media.url.indexOf(',') + 1);
     const audioBuffer = Buffer.from(audioBase64, 'base64');
     const wavAudioBase64 = await toWav(audioBuffer);
@@ -96,7 +92,6 @@ REGRAS:
     };
 
   } catch (error: any) {
-    // Resiliência contra limites de cota - O sistema nunca para
     return {
       text: "Rodrigo meu senhor, recalibrando núcleos. O comando continua.",
       audio: "" 
