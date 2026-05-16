@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { aiVoiceInteraction } from '@/ai/flows/ai-voice-interaction';
-import { Mic, MicOff, Radio, Loader2, AlertCircle, Volume2, Power } from 'lucide-react';
+import { Mic, Radio, Loader2, AlertCircle, Volume2, Power, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -23,7 +23,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const recognitionRef = useRef<any>(null);
-  const shouldListenRef = useRef(false);
+  const isSystemActiveRef = useRef(false);
 
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -33,72 +33,70 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       recognition.interimResults = false;
       recognition.lang = 'pt-BR';
 
+      recognition.onstart = () => {
+        setIsListening(true);
+        setError(null);
+      };
+
       recognition.onresult = (event: any) => {
         const text = event.results[0][0].transcript;
         setTranscript(`Rodrigo meu senhor: "${text}"`);
-        setIsListening(false);
         handleProcessVoice(text);
       };
 
       recognition.onerror = (event: any) => {
         if (event.error !== 'no-speech' && event.error !== 'aborted') {
-          setError(`Erro Neural: ${event.error}`);
+          setError(`Falha Sensorial: ${event.error}`);
         }
         setIsListening(false);
-        // Se houver erro de silêncio e o link deve estar ativo, tentamos reiniciar
-        if (event.error === 'no-speech' && shouldListenRef.current && !isPlaying) {
-          startRecognitionSafe();
-        }
       };
 
       recognition.onend = () => {
         setIsListening(false);
-        // Reinicia automaticamente se o link estiver ativo e não estivermos tocando áudio
-        if (shouldListenRef.current && !isPlaying && !isListening) {
-          startRecognitionSafe();
+        // Reinício Automático: Se o sistema estiver ativo e não estivermos falando, ouça novamente.
+        if (isSystemActiveRef.current && !audioRef.current?.paused === false) {
+          startListening();
         }
       };
 
       recognitionRef.current = recognition;
     } else {
-      setError("Reconhecimento não suportado.");
+      setError("Módulo de reconhecimento não detectado.");
     }
-  }, [isPlaying]);
+  }, []);
 
-  const startRecognitionSafe = () => {
-    try {
-      if (recognitionRef.current && !isListening && !isPlaying) {
+  const startListening = () => {
+    if (recognitionRef.current && !isListening && !isPlaying) {
+      try {
         recognitionRef.current.start();
-        setIsListening(true);
+      } catch (e) {
+        console.log("Recalibrando sensores auditivos...");
       }
-    } catch (e) {
-      console.log("Tentativa de reinicialização do mic...");
     }
   };
 
   const toggleSystemPower = () => {
     if (isActive) {
       setIsActive(false);
-      shouldListenRef.current = false;
+      isSystemActiveRef.current = false;
       recognitionRef.current?.stop();
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current.currentTime = 0;
       }
       setIsPlaying(false);
-      setTranscript('Sistemas Megatron em Standby.');
+      setTranscript('Sistemas em Standby, Rodrigo meu senhor.');
     } else {
       setIsActive(true);
-      shouldListenRef.current = true;
+      isSystemActiveRef.current = true;
       setError(null);
-      setTranscript('Link Neural Ativado. Aguardando ordens, Rodrigo meu senhor...');
-      startRecognitionSafe();
+      setTranscript('Link Neural Ativado. Monitoramento contínuo iniciado...');
+      startListening();
     }
   };
 
   const handleProcessVoice = async (query: string) => {
     onProcessingChange(true);
-    setError(null);
     try {
       const result = await aiVoiceInteraction(query);
       setTranscript(result.text);
@@ -106,9 +104,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       if (audioRef.current) {
         audioRef.current.src = result.audio;
         setIsPlaying(true);
-        // Paramos o mic enquanto falamos para evitar eco
-        recognitionRef.current?.stop();
-        
+        // O reconhecimento para automaticamente para evitar feedback do áudio
         const playPromise = audioRef.current.play();
         if (playPromise !== undefined) {
           playPromise.catch(() => setIsPlaying(false));
@@ -117,15 +113,9 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
     } catch (err: any) {
       console.error(err);
       if (err.message === 'QUOTA_EXCEEDED') {
-        setError("Limite de cota atingido.");
-        setTranscript("Sistema sobrecarregado, Rodrigo meu senhor.");
+        setError("Limite de processamento atingido.");
       } else {
-        setTranscript("Falha na transmissão do link neural.");
-        setError("Conexão interrompida.");
-      }
-      // Se der erro, tenta voltar a ouvir se o sistema ainda estiver ativo
-      if (shouldListenRef.current) {
-        setTimeout(startRecognitionSafe, 2000);
+        setError("Erro na transmissão neural.");
       }
     } finally {
       onProcessingChange(false);
@@ -134,86 +124,90 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
 
   const handleAudioEnd = () => {
     setIsPlaying(false);
-    if (shouldListenRef.current) {
-      // Pequeno delay para garantir que o áudio terminou mesmo antes de abrir o mic
-      setTimeout(startRecognitionSafe, 500);
+    // Reinicia a escuta assim que Megatron termina de falar
+    if (isSystemActiveRef.current) {
+      setTimeout(startListening, 300);
     }
   };
 
   return (
-    <div className="fixed bottom-24 left-8 z-50 animate-in slide-in-from-bottom duration-1000 delay-300">
-      <div className="hud-glass p-6 rounded-2xl flex flex-col items-center gap-4 w-72 border-primary/20 shadow-[0_0_40px_rgba(255,191,0,0.15)]">
-        <div className="flex items-center justify-between w-full">
+    <div className="fixed bottom-24 left-8 z-50 animate-in slide-in-from-bottom duration-1000">
+      <div className="hud-glass p-6 rounded-2xl flex flex-col items-center gap-4 w-80 border-primary/40 shadow-[0_0_50px_rgba(255,191,0,0.2)]">
+        <div className="flex items-center justify-between w-full border-b border-primary/20 pb-2">
           <div className="flex items-center gap-2">
-            <Radio className={cn("w-4 h-4", isActive ? "text-primary animate-pulse" : "text-primary/40")} />
-            <span className="text-[10px] font-headline font-bold text-primary uppercase tracking-widest">
-              {isActive ? "Link Neural Ativo" : "Link Neural Offline"}
+            <div className={cn("w-2 h-2 rounded-full", isActive ? "bg-primary animate-pulse" : "bg-primary/20")} />
+            <span className="text-[10px] font-headline font-bold text-primary tracking-[0.2em] uppercase">
+              {isActive ? "Link Neural Online" : "Link Offline"}
             </span>
           </div>
-          {isPlaying && <Volume2 className="w-3 h-3 text-primary animate-bounce" />}
+          <div className="flex gap-2">
+             <Zap className={cn("w-3 h-3", isActive ? "text-primary" : "text-primary/20")} />
+             <Radio className={cn("w-3 h-3", isListening ? "text-primary animate-pulse" : "text-primary/20")} />
+          </div>
         </div>
 
-        <div className="relative">
+        <div className="relative group">
           <div className={cn(
-            "absolute inset-0 rounded-full bg-primary/30 blur-2xl animate-pulse scale-150 transition-opacity duration-500",
+            "absolute inset-0 rounded-full bg-primary/20 blur-3xl scale-150 transition-opacity duration-1000",
             isActive ? "opacity-100" : "opacity-0"
           )} />
           
           <Button 
             onClick={toggleSystemPower}
             className={cn(
-              "w-24 h-24 rounded-full border-2 transition-all relative z-10 overflow-hidden",
-              !isActive ? "bg-black/40 border-primary/20 hover:border-primary/60" :
-              isPlaying ? "bg-primary/40 border-primary scale-110 shadow-[0_0_30px_#FFBF00]" :
-              isListening ? "bg-primary/20 border-primary animate-pulse" :
-              "bg-primary/10 border-primary/60"
+              "w-28 h-28 rounded-full border-2 transition-all duration-500 relative z-10",
+              !isActive ? "bg-black/60 border-primary/20" :
+              isPlaying ? "bg-primary/30 border-primary shadow-[0_0_40px_#FFBF00]" :
+              isListening ? "bg-primary/10 border-primary animate-pulse scale-105" :
+              "bg-primary/5 border-primary/40"
             )}
           >
             {!isActive ? (
-              <Power className="w-10 h-10 text-primary/40" />
+              <Power className="w-12 h-12 text-primary/40" />
             ) : isPlaying ? (
-              <div className="flex gap-1 items-end h-8">
-                {[1, 2, 3, 4].map(i => (
+              <div className="flex gap-1.5 items-center justify-center">
+                {[1, 2, 3, 4, 5].map(i => (
                   <div 
                     key={i} 
-                    className="w-1.5 bg-primary animate-bounce rounded-full" 
-                    style={{ height: `${40 + Math.random() * 60}%`, animationDuration: `${0.4 + i * 0.1}s` }} 
+                    className="w-1.5 bg-primary rounded-full animate-bounce" 
+                    style={{ height: '30px', animationDuration: `${0.3 + i * 0.1}s` }} 
                   />
                 ))}
               </div>
             ) : isListening ? (
-              <Mic className="w-10 h-10 text-primary animate-pulse" />
+              <Mic className="w-12 h-12 text-primary drop-shadow-[0_0_8px_#FFBF00]" />
             ) : (
-              <Loader2 className="w-10 h-10 text-primary animate-spin" />
+              <Loader2 className="w-12 h-12 text-primary animate-spin" />
             )}
           </Button>
         </div>
 
-        <div className="w-full text-center min-h-[60px] flex flex-col justify-center bg-black/20 rounded-lg p-3 border border-primary/5">
+        <div className="w-full bg-black/40 rounded-lg p-4 border border-primary/10 min-h-[80px] flex flex-col justify-center text-center">
           {error ? (
-            <div className="flex flex-col items-center justify-center gap-1 text-primary text-[10px] font-bold">
-              <div className="flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {error}</div>
-              <span className="opacity-50">Rodrigo meu senhor, aguarde reinicialização.</span>
+            <div className="text-primary text-[10px] font-bold flex flex-col items-center gap-1">
+              <AlertCircle className="w-4 h-4 mb-1" />
+              <span>{error}</span>
+              <span className="opacity-50">Rodrigo meu senhor, aguarde recalibração.</span>
             </div>
           ) : (
-            <p className="text-[11px] font-body text-primary/90 leading-tight italic">
-              {transcript || "Ative o Link Neural, Rodrigo meu senhor."}
+            <p className="text-[12px] font-body text-primary leading-tight font-medium italic opacity-90">
+              {transcript || "Inicie o monitoramento neural, Rodrigo meu senhor."}
             </p>
           )}
         </div>
 
         {isActive && (
-          <div className="w-full flex flex-col gap-1">
-            <div className="flex justify-between text-[8px] font-code opacity-50 px-1">
-              <span>ESTADO: {isPlaying ? 'TRANSMITINDO' : isListening ? 'MONITORANDO' : 'PROCESSANDO'}</span>
-              <span>SYNC_OK</span>
+          <div className="w-full space-y-1.5">
+            <div className="flex justify-between text-[9px] font-code text-primary/60 font-bold uppercase tracking-tighter">
+              <span>Sync: {isListening ? 'Escuta Ativa' : isPlaying ? 'Transmissão' : 'Pronto'}</span>
+              <span>Lvl: 0xFF.9</span>
             </div>
-            <div className="w-full h-1 bg-primary/10 rounded-full overflow-hidden">
+            <div className="w-full h-1 bg-primary/10 rounded-full overflow-hidden relative">
               <div 
                 className={cn(
-                  "h-full bg-primary transition-all duration-300",
-                  isPlaying ? "animate-[scanline_2s_linear_infinite] w-full" : 
-                  isListening ? "w-1/3 animate-pulse" : "w-2/3"
+                  "h-full bg-primary transition-all duration-500",
+                  isPlaying ? "w-full animate-pulse" : 
+                  isListening ? "w-1/2 translate-x-1/2" : "w-0"
                 )} 
               />
             </div>
