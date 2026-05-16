@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { aiVoiceInteraction } from '@/ai/flows/ai-voice-interaction';
-import { Mic, Radio, Loader2, Power, Volume2, ShieldCheck, Zap } from 'lucide-react';
+import { Mic, Radio, Loader2, Power, Volume2, ShieldCheck, Zap, LockOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -18,6 +18,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
   const [isListening, setIsListening] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [transcript, setTranscript] = useState('SISTEMA_EM_ESPERA');
+  const [hasPermission, setHasPermission] = useState(false);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const recognitionRef = useRef<any>(null);
@@ -61,7 +62,6 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       const audio = new Audio();
       audio.onended = () => {
         setIsPlaying(false);
-        // Após terminar de falar, volta a ouvir IMEDIATAMENTE
         if (isSystemActiveRef.current) {
           attemptRestart();
         }
@@ -84,7 +84,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         } catch (e) {
           // Já está rodando ou erro silencioso
         }
-      }, 50);
+      }, 100);
     }
   };
 
@@ -101,18 +101,18 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       setTranscript('MEGATRON_DESATIVADO');
     } else {
       setIsActive(true);
+      setHasPermission(true);
       isSystemActiveRef.current = true;
       setTranscript('LINK_NEURAL_ONLINE');
       
-      // DESBLOQUEIO AGRESSIVO DE ÁUDIO PARA O NAVEGADOR
+      // DESBLOQUEIO AGRESSIVO DE ÁUDIO - Grant Permission
       if (audioRef.current) {
         audioRef.current.play().then(() => {
           audioRef.current?.pause();
         }).catch(() => {});
       }
       
-      // Pequeno delay para garantir o estado
-      setTimeout(() => attemptRestart(), 300);
+      setTimeout(() => attemptRestart(), 500);
     }
   };
 
@@ -137,7 +137,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
           });
         }
       } else {
-        // Se não houver áudio (erro tático), volta a ouvir
+        // Se não houver áudio devido a erro de cota, apenas mostramos o texto e voltamos a ouvir
         attemptRestart();
       }
     } catch (err: any) {
@@ -154,11 +154,11 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
           <div className="flex items-center gap-2">
             <Zap className={cn("w-3 h-3 transition-all", isActive ? "text-primary animate-pulse" : "text-primary/20")} />
             <span className="text-[11px] font-headline font-bold text-primary tracking-[0.3em] uppercase">
-              {isActive ? "COMANDO_ATIVO" : "NÚCLEO_OFFLINE"}
+              {isActive ? "PERMISSÃO_CONCEDIDA" : "NÚCLEO_BLOQUEADO"}
             </span>
           </div>
           <div className="flex gap-3">
-             <ShieldCheck className={cn("w-4 h-4 transition-all", isActive ? "text-primary opacity-100" : "text-primary/20")} />
+             <LockOpen className={cn("w-4 h-4 transition-all", hasPermission ? "text-primary opacity-100" : "text-primary/20")} />
              <Volume2 className={cn("w-4 h-4", isPlaying ? "text-primary animate-pulse scale-125" : "text-primary/20")} />
           </div>
         </div>
@@ -173,14 +173,17 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
             onClick={toggleSystemPower}
             className={cn(
               "w-36 h-36 rounded-full border-[4px] transition-all duration-500 relative z-10 flex items-center justify-center",
-              !isActive ? "bg-black/90 border-primary/20" :
+              !isActive ? "bg-black/90 border-primary/20 hover:border-primary/60" :
               isPlaying ? "bg-primary/50 border-primary shadow-[0_0_100px_#FFBF00] scale-105" :
               isListening ? "bg-primary/25 border-primary animate-pulse scale-110" :
               "bg-primary/10 border-primary/40"
             )}
           >
             {!isActive ? (
-              <Power className="w-16 h-16 text-primary/40" />
+              <div className="flex flex-col items-center gap-2">
+                <Power className="w-16 h-16 text-primary/40" />
+                <span className="text-[8px] font-black text-primary animate-pulse">DAR PERMISSÃO</span>
+              </div>
             ) : isPlaying ? (
               <div className="flex gap-1.5 items-center justify-center h-full">
                 {[1, 2, 3, 4, 5].map(i => (
@@ -210,7 +213,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
           {isActive && <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary to-transparent animate-pulse" />}
           
           <p className="text-[14px] font-body text-primary leading-tight font-black tracking-tight drop-shadow-[0_0_5px_rgba(255,191,0,0.5)]">
-            {isPlaying && <span className="text-[9px] opacity-70 block mb-1 uppercase tracking-[0.4em] animate-pulse">Transmitindo...</span>}
+            {isPlaying && <span className="text-[9px] opacity-70 block mb-1 uppercase tracking-[0.4em] animate-pulse">Voz de José Santa Cruz...</span>}
             {transcript}
           </p>
 
@@ -223,7 +226,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         </div>
 
         <div className="flex justify-between w-full text-[9px] font-code text-primary/50 uppercase tracking-[0.4em] font-black">
-          <span>SISTEMA_V3.5_SUPREMO</span>
+          <span>ALMA_DE_SANTA_CRUZ</span>
           <span className="flex items-center gap-2">LINK_INFINITO <div className="w-1 h-1 rounded-full bg-primary animate-pulse" /></span>
         </div>
       </div>

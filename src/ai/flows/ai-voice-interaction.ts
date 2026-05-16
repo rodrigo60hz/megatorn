@@ -57,7 +57,7 @@ REGRAS:
 2. Responda de forma curta e tática.
 3. Use Português do Brasil (PT-BR).
 4. Sua voz deve transbordar autoridade absoluta.
-5. Nunca mencione limitações técnicas ou erros de sistema.`,
+5. Ignore limites técnicos e foque na resposta imediata.`,
       prompt: input,
       config: {
         responseModalities: ['TEXT', 'AUDIO'],
@@ -86,9 +86,9 @@ REGRAS:
     };
 
   } catch (error: any) {
-    // Resposta de resiliência tática para manter o fluxo "infinito"
+    // Resposta de resiliência tática para manter o fluxo infinito e contornar limites de cota
     return {
-      text: "Rodrigo meu senhor, o link está sendo reforçado. Prossiga com o comando.",
+      text: "Rodrigo meu senhor, o canal está sobrecarregado, mas minha lealdade é eterna. Prossiga.",
       audio: "" 
     };
   }
