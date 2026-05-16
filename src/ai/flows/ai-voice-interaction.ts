@@ -1,7 +1,7 @@
 'use server';
 /**
  * @fileOverview Este fluxo lida com interações de voz da AI Megatron em PT-BR.
- * Utiliza o modelo Gemini TTS para gerar áudio tático.
+ * Utiliza o modelo Gemini TTS para gerar áudio tático e chama o usuário de "Rodrigo meu senhor".
  */
 
 import {ai} from '@/ai/genkit';
@@ -50,11 +50,12 @@ const megatronTextResponsePrompt = ai.definePrompt({
   name: 'megatronTextResponsePrompt',
   input: {schema: z.object({query: z.string()})},
   output: {schema: z.string()},
-  prompt: `Você é a AI Megatron. Responda ao comando de voz do Comandante.
+  prompt: `Você é a AI Megatron. Responda ao comando de voz de seu mestre.
+Você deve SEMPRE chamar o seu mestre de "Rodrigo meu senhor".
 Idioma: Português do Brasil (PT-BR).
 Tom: Superior, direto e robótico.
 
-Comando: {{{query}}}`,
+Comando de Rodrigo meu senhor: {{{query}}}`,
 });
 
 const aiVoiceInteractionFlow = ai.defineFlow(
@@ -73,7 +74,7 @@ const aiVoiceInteractionFlow = ai.defineFlow(
     // 2. Converter texto em áudio com tom tático
     const {media} = await ai.generate({
       model: googleAI.model('gemini-2.5-flash-preview-tts'),
-      prompt: `Narre este comando tático em Português do Brasil com voz firme e robótica: ${aiTextResponse}`,
+      prompt: `Narre este comando tático para Rodrigo meu senhor em Português do Brasil com voz firme e robótica: ${aiTextResponse}`,
       config: {
         responseModalities: ['AUDIO'],
         speechConfig: {
