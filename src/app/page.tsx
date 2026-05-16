@@ -24,11 +24,11 @@ export default function Home() {
       {/* Persistent UI Overlays */}
       <TelemetryHUD />
 
-      {/* Deployment Badge */}
+      {/* Deployment Badge - Confirmação de programa Windows */}
       <div className="fixed top-1/2 left-8 -translate-y-1/2 flex flex-col gap-4 opacity-50">
         <div className="flex items-center gap-3 text-secondary animate-pulse">
            <MonitorCheck className="w-5 h-5" />
-           <span className="text-[10px] font-code font-black tracking-[0.4em] vertical-text">SISTEMA_ANCORADO_AO_PC</span>
+           <span className="text-[10px] font-code font-black tracking-[0.4em] vertical-text">SISTEMA_ANCORADO_AO_PC_WINDOWS</span>
         </div>
       </div>
 

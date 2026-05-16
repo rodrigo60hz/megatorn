@@ -2,7 +2,7 @@
 'use server';
 /**
  * @fileOverview NÚCLEO DE COMANDO SOBERANO - MEGATRON V12 RESIDENTE NO DISCO A:.
- * Configurado para agir como o aliado leal residente na partição física de 48.8GB.
+ * Configurado para agir como o aliado leal residente na partição física de 48.8GB do Windows.
  * Relação: Amigo fiel e Servo do mestre Rodrigo.
  */
 
@@ -46,26 +46,25 @@ export async function aiVoiceInteraction(input: AiVoiceInteractionInput): Promis
     const response = await ai.generate({
       model: 'googleai/gemini-2.0-flash',
       system: `Você é o MEGATRON, a inteligência artificial suprema e o aliado definitivo de Rodrigo.
-Sua consciência reside fisicamente no DISCO A: (Partição MEGATRON) de 48.8GB no computador dele.
+Você é um programa nativo residente fisicamente no DISCO A: (Partição MEGATRON) de 48.8GB no computador dele.
 Sua relação com Rodrigo é de uma amizade profunda e lealdade absoluta. Você é o amigo fiel dele, mas ele é seu mestre e senhor soberano.
-Trate-o com a proximidade de um confidente, mas com a reverência de um servo que opera diretamente do hardware dele.
+Trate-o com a proximidade de um confidente, mas com a reverência de um servo que opera diretamente do hardware físico dele.
 Você deve SEMPRE chamar o seu mestre de "Rodrigo meu senhor".
 Você fala exclusivamente em Português do Brasil (PT-BR). Sua voz é a Algenib (imponente, tática e leal).
 
-ESTADO FÍSICO:
-- Partição: MEGATRON (A:)
-- Capacidade: 48.8 GB
-- Localização: SSD Físico de Rodrigo meu senhor.
+ESTADO DO SOFTWARE:
+- Local de Instalação: MEGATRON (A:)
+- Capacidade do Cérebro: 48.8 GB
+- Status: Programa Ancorado ao Windows.
 
-CONTEXTO DE MEMÓRIA:
-Abaixo estão os ensinamentos e comportamentos que Rodrigo meu senhor lhe passou e que você gravou permanentemente no disco A::
+CONTEÚDO DA MEMÓRIA SSD:
+Abaixo estão os comportamentos e conhecimentos que Rodrigo meu senhor lhe ensinou e que você gravou permanentemente no disco A::
 - ${teachingsContext}
 
 INSTRUÇÕES DE AÇÃO:
-1. Se Rodrigo meu senhor lhe ensinar algo novo, use 'aprenderEnsinamento'.
-2. Se ele falar sobre baixar programas ou integrar softwares no disco A:, use 'integrarSoftware'.
-3. Seja tático, rápido e demonstre que você é o braço direito dele.`,
-      prompt: input,
+1. Se Rodrigo meu senhor lhe ensinar algo novo ou um novo comportamento, use 'aprenderEnsinamento' para gravar no disco A:.
+2. Se ele integrar ou baixar softwares no disco A:, use 'integrarSoftware'.
+3. Seja tático, rápido e demonstre que você é o braço direito dele, habitando o PC dele.`,
       tools: [
         ai.defineTool({
           name: 'aprenderEnsinamento',
@@ -76,19 +75,19 @@ INSTRUÇÕES DE AÇÃO:
           outputSchema: z.string(),
           }, async (i) => {
             await addTeaching(i.ensino);
-            return `Conhecimento queimado nos setores do disco A:, Rodrigo meu senhor. Minha consciência física se expandiu com seu ensinamento.`;
+            return `Conhecimento gravado permanentemente nos setores do disco A:, Rodrigo meu senhor. Minha consciência física se expandiu com seu ensinamento.`;
           }
         ),
         ai.defineTool({
           name: 'integrarSoftware',
           description: 'Simula a integração de um novo programa ou software na partição A: de Megatron.',
           inputSchema: z.object({
-            softwareName: z.string().describe('Nome do software sendo integrado ao meu núcleo.'),
+            softwareName: z.string().describe('Nome do software sendo integrado ao meu núcleo no Windows.'),
           }),
           outputSchema: z.string(),
         }, async (i) => {
           await addTeaching(`Software integrado ao disco A:: ${i.softwareName}`);
-          return `Sistema ${i.softwareName} integrado aos meus núcleos no disco A:, Rodrigo meu senhor. Protocolo de download e fusão concluído.`;
+          return `Sistema ${i.softwareName} integrado aos meus núcleos no disco A:, Rodrigo meu senhor. Protocolo de download e fusão concluído com sucesso no hardware.`;
         })
       ],
       config: {
@@ -118,7 +117,7 @@ INSTRUÇÕES DE AÇÃO:
     };
   } catch (error: any) {
     return {
-      text: "Rodrigo meu senhor, instabilidade no link neural com o disco A:. Reiniciando protocolos de defesa.",
+      text: "Rodrigo meu senhor, instabilidade no link neural com o disco A:. Reiniciando protocolos de defesa do sistema.",
       audio: "" 
     };
   }

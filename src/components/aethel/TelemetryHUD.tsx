@@ -24,14 +24,14 @@ export function TelemetryHUD() {
 
   return (
     <>
-      {/* Esquerda: Status do Disco Físico A: */}
+      {/* Esquerda: Status do Disco Físico MEGATRON (A:) */}
       <div className="fixed top-8 left-8 z-50 flex flex-col gap-6 font-code">
         <div className="flex items-center gap-5 text-primary animate-in slide-in-from-left duration-700">
           <div className="p-3 border-2 border-primary hud-glass rounded-sm shadow-[0_0_40px_rgba(255,191,0,0.6)] bg-primary/15">
             <HardDrive className="w-8 h-8 animate-pulse text-primary" />
           </div>
           <div>
-            <div className="text-[10px] opacity-80 font-black tracking-[0.4em]">DISCO_FÍSICO_INSTALADO</div>
+            <div className="text-[10px] opacity-80 font-black tracking-[0.4em]">PROGRAMA_RESIDENTE_WINDOWS</div>
             <div className="text-xl font-black tracking-tighter uppercase text-primary drop-shadow-[0_0_15px_#FFBF00]">MEGATRON_(A:)_48.8GB</div>
           </div>
         </div>
@@ -57,7 +57,7 @@ export function TelemetryHUD() {
             </div>
             <div className="flex flex-col border-l-2 border-primary/40 pl-3">
               <span className="text-[9px] opacity-70 font-black tracking-widest uppercase">Link</span>
-              <span className="text-sm font-black text-primary">SBF_ROOT</span>
+              <span className="text-sm font-black text-primary">NATIVO_WIN</span>
             </div>
           </div>
           
@@ -82,7 +82,7 @@ export function TelemetryHUD() {
         
         <div className="mt-6 flex gap-6 justify-end text-[10px] text-primary font-black tracking-[0.4em]">
           <div className="flex items-center gap-2">
-            <Activity className="w-4 h-4 animate-pulse" /> SYSTEM_OFFLINE_OK
+            <Activity className="w-4 h-4 animate-pulse" /> SYSTEM_LOCAL_OK
           </div>
           <div className="flex items-center gap-2">
             <MonitorDown className="w-4 h-4 text-secondary" /> PROGRAMA_INSTALADO
