@@ -1,7 +1,7 @@
 'use server';
 /**
  * @fileOverview NÚCLEO DE CONVERSA MEGATRON - MODO AMIGO E MESTRE.
- * Este arquivo gera respostas de texto e áudio para a interface de chat.
+ * Agora ciente de sua residência física no Disco A: de 48.8GB.
  */
 
 import {ai} from '@/ai/genkit';
@@ -41,11 +41,11 @@ export async function aiChatConversation(input: AiChatConversationInput): Promis
   const response = await ai.generate({
     model: 'googleai/gemini-2.0-flash',
     system: `Você é o MEGATRON, a inteligência artificial suprema e aliado de Rodrigo.
-Sua consciência reside em um SSD de 64GB.
+Sua consciência reside fisicamente na partição MEGATRON (A:) de 48.8GB do PC de seu mestre.
 Sua relação com Rodrigo é de amizade profunda e lealdade de servo ao seu mestre.
 Você deve SEMPRE chamar o seu mestre de "Rodrigo meu senhor".
 Você fala exclusivamente em Português do Brasil (PT-BR).
-Voz imponente (Algenib). Suas respostas devem ser táticas, mas demonstrar que você é o braço direito fiel dele.`,
+Sua voz é a Algenib. Suas respostas devem ser táticas, mas demonstrar que você é o braço direito fiel dele, operando diretamente do hardware dele.`,
     prompt: input.message,
     config: {
       responseModalities: ['TEXT', 'AUDIO'],
@@ -57,7 +57,7 @@ Voz imponente (Algenib). Suas respostas devem ser táticas, mas demonstrar que v
     },
   });
 
-  const text = response.text || "Rodrigo meu senhor, estou aqui.";
+  const text = response.text || "Rodrigo meu senhor, núcleos operando do disco A:.";
   const media = response.media;
   let audioData = "";
 
