@@ -1,9 +1,9 @@
+
 "use client"
 
 import React, { useState } from 'react';
 import { KineticCore } from '@/components/aethel/KineticCore';
 import { TelemetryHUD } from '@/components/aethel/TelemetryHUD';
-import { CognitiveProcessor } from '@/components/aethel/CognitiveProcessor';
 import { VoiceLink } from '@/components/aethel/VoiceLink';
 import { Activity, Shield, Zap, Layers } from 'lucide-react';
 
@@ -53,7 +53,6 @@ export default function Home() {
       </div>
 
       {/* Interactions */}
-      <CognitiveProcessor onProcessingChange={setIsProcessing} />
       <VoiceLink onProcessingChange={setIsProcessing} />
 
       {/* Corner Accents */}
