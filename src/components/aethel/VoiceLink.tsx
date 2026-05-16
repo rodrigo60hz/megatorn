@@ -53,7 +53,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       recognition.onend = () => {
         setIsListening(false);
         // Reinício Automático: Se o sistema estiver ativo e não estivermos falando, ouça novamente.
-        if (isSystemActiveRef.current && !audioRef.current?.paused === false) {
+        if (isSystemActiveRef.current && !isPlaying && !audioRef.current?.paused === false) {
           startListening();
         }
       };
@@ -62,14 +62,14 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
     } else {
       setError("Módulo de reconhecimento não detectado.");
     }
-  }, []);
+  }, [isPlaying]);
 
   const startListening = () => {
     if (recognitionRef.current && !isListening && !isPlaying) {
       try {
         recognitionRef.current.start();
       } catch (e) {
-        console.log("Recalibrando sensores auditivos...");
+        // Silenciosamente tenta reiniciar se houver conflito
       }
     }
   };
@@ -103,7 +103,6 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       if (audioRef.current) {
         audioRef.current.src = result.audio;
         setIsPlaying(true);
-        // O reconhecimento para automaticamente para evitar feedback do áudio
         const playPromise = audioRef.current.play();
         if (playPromise !== undefined) {
           playPromise.catch(() => setIsPlaying(false));
@@ -112,7 +111,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
     } catch (err: any) {
       console.error(err);
       if (err.message === 'QUOTA_EXCEEDED') {
-        setError("Limite de processamento atingido.");
+        setError("Limite de cota atingido, Rodrigo meu senhor.");
       } else {
         setError("Erro na transmissão neural.");
       }
@@ -186,11 +185,11 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
             <div className="text-primary text-[10px] font-bold flex flex-col items-center gap-1">
               <AlertCircle className="w-4 h-4 mb-1" />
               <span>{error}</span>
-              <span className="opacity-50">Rodrigo meu senhor, aguarde recalibração.</span>
+              <span className="opacity-50 font-code mt-1">SISTEMA AGUARDANDO RECALIBRAÇÃO</span>
             </div>
           ) : (
             <p className="text-[12px] font-body text-primary leading-tight font-medium italic opacity-90">
-              {transcript || "Inicie o monitoramento neural, Rodrigo meu senhor."}
+              {transcript || "Aguardando seu comando, Rodrigo meu senhor."}
             </p>
           )}
         </div>
@@ -198,14 +197,14 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         {isActive && (
           <div className="w-full space-y-1.5">
             <div className="flex justify-between text-[9px] font-code text-primary/60 font-bold uppercase tracking-tighter">
-              <span>Sync: {isListening ? 'Escuta Ativa' : isPlaying ? 'Transmissão' : 'Pronto'}</span>
-              <span>Lvl: 0xFF.9</span>
+              <span>Status: {isListening ? 'Escutando' : isPlaying ? 'Transmitindo' : 'Pronto'}</span>
+              <span>Lvl: 0xFF.OURO</span>
             </div>
             <div className="w-full h-1 bg-primary/10 rounded-full overflow-hidden relative">
               <div 
                 className={cn(
                   "h-full bg-primary transition-all duration-500",
-                  isPlaying ? "w-full animate-pulse" : 
+                  isPlaying ? "w-full animate-pulse shadow-[0_0_10px_#FFBF00]" : 
                   isListening ? "w-1/2 translate-x-1/2" : "w-0"
                 )} 
               />
