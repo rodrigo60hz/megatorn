@@ -1,8 +1,9 @@
+
 "use client"
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { aiVoiceInteraction } from '@/ai/flows/ai-voice-interaction';
-import { Mic, Radio, Loader2, Power, Volume2, Zap, LockOpen } from 'lucide-react';
+import { Mic, Radio, Loader2, Power, Volume2, Zap, LockOpen, AudioLines } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -13,34 +14,90 @@ declare global {
   }
 }
 
-// Áudio de silêncio estruturado para desbloqueio agressivo de driver do navegador
 const SILENCE_WAV = "data:audio/wav;base64,UklGRigAAABXQVZFRm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YQQAAAAEAA==";
 
 export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: boolean) => void }) {
   const [isActive, setIsActive] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [transcript, setTranscript] = useState('MARIA_OFFLINE');
+  const [transcript, setTranscript] = useState('SISTEMA_OFFLINE');
   const [hasPermission, setHasPermission] = useState(false);
+  const [clapDetected, setClapDetected] = useState(false);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const recognitionRef = useRef<any>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const micStreamRef = useRef<MediaStream | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  
   const isSystemActiveRef = useRef(false);
   const isProcessingRef = useRef(false);
-  const restartTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastClapTimeRef = useRef(0);
+  const clapCountRef = useRef(0);
 
-  const attemptRestart = useCallback(() => {
-    if (restartTimeoutRef.current) clearTimeout(restartTimeoutRef.current);
-    if (isSystemActiveRef.current && !isPlaying && !isListening && !isProcessingRef.current) {
-      restartTimeoutRef.current = setTimeout(() => {
-        try {
-          recognitionRef.current?.start();
-        } catch (e) {
-          // Já em execução ou erro silencioso
-        }
-      }, 500); 
+  const startRecognition = useCallback(() => {
+    if (!isSystemActiveRef.current || isPlaying || isProcessingRef.current || isListening) return;
+    try {
+      recognitionRef.current?.start();
+    } catch (e) {
+      // Ignorar se já estiver rodando
     }
   }, [isPlaying, isListening]);
+
+  // Detector de Palmas (Clap Detection)
+  const initClapDetection = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      micStreamRef.current = stream;
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const source = audioContext.createMediaStreamSource(stream);
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 256;
+      source.connect(analyser);
+      analyserRef.current = analyser;
+
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+
+      const checkAudio = () => {
+        if (!isSystemActiveRef.current) return;
+        analyser.getByteFrequencyData(dataArray);
+        
+        let sum = 0;
+        for(let i = 0; i < bufferLength; i++) {
+          sum += dataArray[i];
+        }
+        const average = sum / bufferLength;
+
+        // Limiar de palma (ajustado para sensibilidade tática)
+        if (average > 75) { 
+          const now = Date.now();
+          if (now - lastClapTimeRef.current > 150) { // Debounce entre palmas
+            if (now - lastClapTimeRef.current < 800) {
+              clapCountRef.current++;
+            } else {
+              clapCountRef.current = 1;
+            }
+            lastClapTimeRef.current = now;
+
+            if (clapCountRef.current >= 2) {
+              setClapDetected(true);
+              setTimeout(() => setClapDetected(false), 500);
+              clapCountRef.current = 0;
+              console.log("COMANDO_PALMAS_DETECTADO");
+              if (!isListening && !isPlaying && !isProcessingRef.current) {
+                startRecognition();
+              }
+            }
+          }
+        }
+        animationFrameRef.current = requestAnimationFrame(checkAudio);
+      };
+      checkAudio();
+    } catch (err) {
+      console.error("ERRO_SENSOR_ACUSTICO:", err);
+    }
+  };
 
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -50,32 +107,13 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       recognition.interimResults = false;
       recognition.lang = 'pt-BR';
 
-      recognition.onstart = () => {
-        setIsListening(true);
-        setTranscript('OUVINDO_RODRIGO...');
-      };
-
+      recognition.onstart = () => setIsListening(true);
       recognition.onresult = (event: any) => {
         const text = event.results[0][0].transcript;
-        if (text) {
-          handleProcessVoice(text);
-        }
+        if (text) handleProcessVoice(text);
       };
-
-      recognition.onerror = () => {
-        setIsListening(false);
-        if (isSystemActiveRef.current && !isPlaying && !isProcessingRef.current) {
-          attemptRestart();
-        }
-      };
-
-      recognition.onend = () => {
-        setIsListening(false);
-        if (isSystemActiveRef.current && !isPlaying && !isProcessingRef.current) {
-          attemptRestart();
-        }
-      };
-
+      recognition.onerror = () => setIsListening(false);
+      recognition.onend = () => setIsListening(false);
       recognitionRef.current = recognition;
     }
 
@@ -86,91 +124,59 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         setIsListening(false);
         try { recognitionRef.current?.stop(); } catch (e) {}
       };
-      audio.onpause = () => setIsPlaying(false);
       audio.onended = () => {
         setIsPlaying(false);
-        if (isSystemActiveRef.current) attemptRestart();
+        // Não reinicia reconhecimento automaticamente para poupar recursos, espera palmas ou clique
       };
       audioRef.current = audio;
     }
 
     return () => {
       recognitionRef.current?.abort();
-      if (restartTimeoutRef.current) clearTimeout(restartTimeoutRef.current);
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+      micStreamRef.current?.getTracks().forEach(t => t.stop());
     };
-  }, [attemptRestart]);
+  }, [startRecognition]);
 
   const toggleSystemPower = () => {
     if (isActive) {
       setIsActive(false);
       isSystemActiveRef.current = false;
       recognitionRef.current?.stop();
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.src = "";
-      }
-      setIsPlaying(false);
-      setTranscript('MARIA_OFFLINE');
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+      micStreamRef.current?.getTracks().forEach(t => t.stop());
+      setTranscript('SISTEMA_OFFLINE');
     } else {
       setIsActive(true);
-      setHasPermission(true);
       isSystemActiveRef.current = true;
-      setTranscript('MARIA_PRONTA');
+      setHasPermission(true);
+      setTranscript('MODO_ESCUITA_ATIVO (BATA 2 PALMAS)');
       
-      // DESBLOQUEIO AGRESSIVO DE ÁUDIO NO PRIMEIRO CLIQUE
+      // Desbloqueio de Áudio
       if (audioRef.current) {
         audioRef.current.src = SILENCE_WAV;
-        audioRef.current.play()
-          .then(() => {
-            console.log("DRIVER_AUDIO_DESBLOQUEADO");
-            setTimeout(() => attemptRestart(), 500);
-          })
-          .catch(() => {
-            console.warn("DRIVER_AUDIO_BLOQUEADO");
-            setTimeout(() => attemptRestart(), 500);
-          });
+        audioRef.current.play().catch(() => console.warn("AUDIO_CONTEXT_PENDING"));
       }
+      initClapDetection();
     }
   };
 
   const handleProcessVoice = async (query: string) => {
     if (isProcessingRef.current) return;
-    
     isProcessingRef.current = true;
     onProcessingChange(true);
-    setIsListening(false);
-    try { recognitionRef.current?.stop(); } catch (e) {}
-    setTranscript('CALCULANDO_RESPOSTA...');
+    setTranscript('PROCESSANDO_COMANDO...');
 
     try {
       const result = await aiVoiceInteraction(query);
       setTranscript(result.text);
       
       if (result.audio && audioRef.current) {
-        // Limpar fonte anterior para garantir novo carregamento
-        audioRef.current.pause();
         audioRef.current.src = result.audio;
-        audioRef.current.load();
-        
-        const playPromise = audioRef.current.play();
-        if (playPromise !== undefined) {
-          playPromise.catch((e) => {
-            console.error("ERRO_PLAYBACK:", e);
-            setIsPlaying(false);
-            isProcessingRef.current = false;
-            attemptRestart();
-          });
-        }
-      } else {
-        console.warn("SEM_CONTEUDO_AUDIO");
-        isProcessingRef.current = false;
-        setTimeout(() => attemptRestart(), 2000);
+        audioRef.current.play().catch(e => console.error("ERRO_VOZ:", e));
       }
-    } catch (err: any) {
-      console.error("ERRO_PROCESSAMENTO_VOZ:", err);
-      setTranscript('ERRO_LINK_NEURAL');
-      isProcessingRef.current = false;
-      attemptRestart();
+    } catch (err) {
+      setTranscript('FALHA_UPLINK');
     } finally {
       isProcessingRef.current = false;
       onProcessingChange(false);
@@ -184,12 +190,12 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
           <div className="flex items-center gap-2">
             <Zap className={cn("w-3 h-3 transition-all", isActive ? "text-primary animate-pulse" : "text-primary/20")} />
             <span className="text-[11px] font-headline font-bold text-primary tracking-[0.3em] uppercase">
-              {isActive ? "LINK_MARIA_ATIVO" : "NÚCLEO_DESLIGADO"}
+              {isActive ? "MARIA_SENSOR_ATIVO" : "NÚCLEO_DORMINDO"}
             </span>
           </div>
-          <div className="flex gap-3">
-             <LockOpen className={cn("w-4 h-4 transition-all", hasPermission ? "text-primary opacity-100" : "text-primary/20")} />
-             <Volume2 className={cn("w-4 h-4", isPlaying ? "text-primary animate-pulse scale-125" : "text-primary/20")} />
+          <div className={cn("flex gap-2 items-center text-[10px] font-code", clapDetected ? "text-primary" : "text-primary/20")}>
+            <AudioLines className={cn("w-4 h-4", clapDetected && "animate-bounce")} />
+            PALMAS_DETECTOR
           </div>
         </div>
 
@@ -212,7 +218,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
             {!isActive ? (
               <div className="flex flex-col items-center gap-2">
                 <Power className="w-16 h-16 text-primary/40" />
-                <span className="text-[8px] font-black text-primary animate-pulse">LIGAR_MARIA</span>
+                <span className="text-[8px] font-black text-primary animate-pulse">ATIVAR_SENSORES</span>
               </div>
             ) : isPlaying ? (
               <div className="flex gap-1.5 items-center justify-center h-full">
@@ -234,7 +240,10 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
                 <div className="absolute w-28 h-28 rounded-full border-2 border-primary/60 animate-ping" />
               </div>
             ) : (
-              <Loader2 className="w-16 h-16 text-primary animate-spin" />
+              <div className="flex flex-col items-center gap-2">
+                <Loader2 className="w-12 h-12 text-primary animate-spin" />
+                <span className="text-[8px] font-black text-primary opacity-60">AGUARDANDO_PALMAS</span>
+              </div>
             )}
           </Button>
         </div>
@@ -243,7 +252,6 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
           {isActive && <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary to-transparent animate-pulse" />}
           
           <p className="text-[14px] font-body text-primary leading-tight font-black tracking-tight drop-shadow-[0_0_5px_rgba(255,191,0,0.5)]">
-            {isPlaying && <span className="text-[9px] opacity-70 block mb-1 uppercase tracking-[0.4em] animate-pulse">Transmitindo Áudio...</span>}
             {transcript}
           </p>
 
@@ -256,8 +264,8 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         </div>
 
         <div className="flex justify-between w-full text-[9px] font-code text-primary/50 uppercase tracking-[0.4em] font-black">
-          <span>MARIA_VOTZ_V2.5</span>
-          <span className="flex items-center gap-2">RODRIGO_MEU_SENHOR <div className="w-1 h-1 rounded-full bg-primary animate-pulse" /></span>
+          <span>MARIA_PALMAS_V3.0</span>
+          <span>RODRIGO_MEU_SENHOR</span>
         </div>
       </div>
     </div>
