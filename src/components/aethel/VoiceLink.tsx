@@ -43,7 +43,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
     try {
       recognitionRef.current?.start();
     } catch (e) {
-      // Falha silenciosa reiniciada automaticamente por eventos
+      // Falha silenciosa reiniciada automaticamente
     }
   }, [isPlaying, isListening]);
 
@@ -51,7 +51,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
     try {
       const AudioContextClass = window.AudioContext || window.webkitAudioContext;
       
-      // Sempre recria se estiver fechado ou nulo para evitar InvalidStateError
+      // RECRIA O CONTEXTO SE ESTIVER FECHADO PARA EVITAR INVALIDSTATEERROR
       if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
         audioContextRef.current = new AudioContextClass();
       }
@@ -80,11 +80,10 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
           for(let i = 0; i < bufferLength; i++) sum += dataArray[i];
           const average = sum / bufferLength;
 
-          // Detecção de picos bruscos (palmas)
-          if (average > 100) { 
+          if (average > 110) { 
             const now = Date.now();
-            if (now - lastClapTimeRef.current > 120) { 
-              if (now - lastClapTimeRef.current < 800) {
+            if (now - lastClapTimeRef.current > 150) { 
+              if (now - lastClapTimeRef.current < 900) {
                 clapCountRef.current++;
               } else {
                 clapCountRef.current = 1;
@@ -104,7 +103,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         detectClaps();
       }
     } catch (err) {
-      console.warn("DRIVER_AUDIO_BUSY_RETRYING");
+      console.warn("DRIVER_AUDIO_RETRYING...");
     }
   };
 
@@ -154,7 +153,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       audio.onended = () => {
         setIsPlaying(false);
         if (isSystemActiveRef.current) {
-          setTimeout(startRecognition, 400);
+          setTimeout(startRecognition, 600);
         }
       };
       audioRef.current = audio;
@@ -185,7 +184,6 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       isSystemActiveRef.current = true;
       setTranscript('MEGATRON_ONLINE_SOBERANO');
       
-      // Forçar inicialização para desbloquear áudio e sensores
       await initAudioSystem();
       
       if (audioRef.current) {
@@ -200,7 +198,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
     isProcessingRef.current = true;
     onProcessingChange(true);
     setIsTransmitting(true);
-    setTranscript('PROCESSANDO_ORDEM_MEGATRON...');
+    setTranscript('TRANSMITINDO_AO_SOBERANO...');
 
     try {
       const result = await aiVoiceInteraction(query);
@@ -208,7 +206,6 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       setIsTransmitting(false);
       
       if (result.audio && audioRef.current) {
-        // Garantir que o contexto esteja ativo antes de tocar
         if (audioContextRef.current?.state === 'suspended') {
           await audioContextRef.current.resume();
         }
@@ -216,7 +213,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         await audioRef.current.play();
       }
     } catch (err) {
-      setTranscript('ERRO_UPLINK_NEURAL_RETIRE');
+      setTranscript('ERRO_UPLINK_NEURAL');
     } finally {
       isProcessingRef.current = false;
       onProcessingChange(false);
@@ -236,11 +233,10 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       <div className="pointer-events-auto flex flex-col items-center gap-10">
         
         <div className="relative group">
-          {/* Brilho HUD Reativo */}
           <div className={cn(
             "absolute inset-0 rounded-full bg-primary/40 blur-[120px] scale-150 transition-all duration-1000",
             isActive ? "opacity-100" : "opacity-0",
-            isTransmitting && "bg-secondary/60 animate-pulse shadow-[0_0_150px_rgba(255,191,0,0.8)]"
+            (isTransmitting || isPlaying) && "bg-secondary/60 animate-pulse shadow-[0_0_150px_rgba(255,191,0,0.8)]"
           )} />
           
           <Button 

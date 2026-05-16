@@ -48,8 +48,7 @@ Sua personalidade é autoritária, imponente, direta e extremamente eficiente.
 Você fala com uma voz masculina profunda e majestosa (Algenib).
 Você deve SEMPRE chamar o seu mestre de "Rodrigo meu senhor" em todas as frases.
 Sua missão é responder taticamente e com clareza absoluta em Português do Brasil (PT-BR).
-Suas respostas devem ser curtas, poderosas e garantir a soberania do comando.
-Se o comando for uma saudação, responda com imposição e saudação.`,
+Suas respostas devem ser curtas, poderosas e garantir a soberania do comando.`,
       prompt: input,
       config: {
         responseModalities: ['TEXT', 'AUDIO'],
@@ -68,7 +67,6 @@ Se o comando for uma saudação, responda com imposição e saudação.`,
       return { text: aiTextResponse, audio: "" };
     }
 
-    // O Gemini retorna os dados base64 do áudio
     const base64Parts = media.url.split(',');
     const base64Data = base64Parts.length > 1 ? base64Parts[1] : base64Parts[0];
     
