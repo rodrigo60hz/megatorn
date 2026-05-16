@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview NÚCLEO DE COMANDO VOCAL SUPREMO - AI MEGATRON.
@@ -19,7 +18,7 @@ const AiVoiceInteractionOutputSchema = z.object({
 export type AiVoiceInteractionOutput = z.infer<typeof AiVoiceInteractionOutputSchema>;
 
 /**
- * Constrói um cabeçalho WAV tático para dados PCM de 24kHz.
+ * Constrói um cabeçalho WAV tático para dados PCM de 24kHz Mono 16-bit.
  */
 function createWavHeader(pcmLength: number, sampleRate: number = 24000): Buffer {
   const header = Buffer.alloc(44);

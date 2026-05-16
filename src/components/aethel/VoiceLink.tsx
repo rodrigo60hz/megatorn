@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -12,6 +11,8 @@ declare global {
   interface Window {
     SpeechRecognition: any;
     webkitSpeechRecognition: any;
+    AudioContext: any;
+    webkitAudioContext: any;
   }
 }
 
@@ -28,6 +29,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const recognitionRef = useRef<any>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const micStreamRef = useRef<MediaStream | null>(null);
   const animationFrameRef = useRef<number | null>(null);
@@ -48,52 +50,62 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
 
   const initClapDetection = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      micStreamRef.current = stream;
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const source = audioContext.createMediaStreamSource(stream);
-      const analyser = audioContext.createAnalyser();
-      analyser.fftSize = 256;
-      source.connect(analyser);
-      analyserRef.current = analyser;
+      if (audioContextRef.current?.state === 'suspended') {
+        await audioContextRef.current.resume();
+      }
 
-      const bufferLength = analyser.frequencyBinCount;
-      const dataArray = new Uint8Array(bufferLength);
-
-      const checkAudio = () => {
-        if (!isSystemActiveRef.current) return;
-        analyser.getByteFrequencyData(dataArray);
+      if (!micStreamRef.current) {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        micStreamRef.current = stream;
         
-        let sum = 0;
-        for(let i = 0; i < bufferLength; i++) {
-          sum += dataArray[i];
-        }
-        const average = sum / bufferLength;
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        const audioContext = new AudioContextClass();
+        audioContextRef.current = audioContext;
 
-        // Sensibilidade para detecção de impacto (palmas)
-        if (average > 85) { 
-          const now = Date.now();
-          if (now - lastClapTimeRef.current > 150) { 
-            if (now - lastClapTimeRef.current < 800) {
-              clapCountRef.current++;
-            } else {
-              clapCountRef.current = 1;
-            }
-            lastClapTimeRef.current = now;
+        const source = audioContext.createMediaStreamSource(stream);
+        const analyser = audioContext.createAnalyser();
+        analyser.fftSize = 256;
+        source.connect(analyser);
+        analyserRef.current = analyser;
 
-            if (clapCountRef.current >= 2) {
-              setClapDetected(true);
-              setTimeout(() => setClapDetected(false), 500);
-              clapCountRef.current = 0;
-              if (!isListening && !isPlaying && !isProcessingRef.current) {
-                startRecognition();
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+
+        const checkAudio = () => {
+          if (!isSystemActiveRef.current) return;
+          analyser.getByteFrequencyData(dataArray);
+          
+          let sum = 0;
+          for(let i = 0; i < bufferLength; i++) {
+            sum += dataArray[i];
+          }
+          const average = sum / bufferLength;
+
+          // Sensibilidade para detecção de impacto (palmas)
+          if (average > 85) { 
+            const now = Date.now();
+            if (now - lastClapTimeRef.current > 150) { 
+              if (now - lastClapTimeRef.current < 800) {
+                clapCountRef.current++;
+              } else {
+                clapCountRef.current = 1;
+              }
+              lastClapTimeRef.current = now;
+
+              if (clapCountRef.current >= 2) {
+                setClapDetected(true);
+                setTimeout(() => setClapDetected(false), 500);
+                clapCountRef.current = 0;
+                if (!isListening && !isPlaying && !isProcessingRef.current) {
+                  startRecognition();
+                }
               }
             }
           }
-        }
-        animationFrameRef.current = requestAnimationFrame(checkAudio);
-      };
-      checkAudio();
+          animationFrameRef.current = requestAnimationFrame(checkAudio);
+        };
+        checkAudio();
+      }
     } catch (err) {
       console.warn("SENSOR_ACUSTICO_OFF");
     }
@@ -138,16 +150,18 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       recognitionRef.current?.abort();
       if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
       micStreamRef.current?.getTracks().forEach(t => t.stop());
+      audioContextRef.current?.close();
     };
   }, [startRecognition]);
 
-  const toggleSystemPower = () => {
+  const toggleSystemPower = async () => {
     if (isActive) {
       setIsActive(false);
       isSystemActiveRef.current = false;
       recognitionRef.current?.stop();
       if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
       micStreamRef.current?.getTracks().forEach(t => t.stop());
+      micStreamRef.current = null;
       setTranscript('SISTEMA_OFFLINE');
     } else {
       setIsActive(true);
@@ -156,7 +170,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       
       if (audioRef.current) {
         audioRef.current.src = SILENCE_WAV;
-        audioRef.current.play().catch(() => console.warn("AUDIO_INIT_PENDING"));
+        await audioRef.current.play().catch(() => console.warn("AUDIO_INIT_PENDING"));
       }
       initClapDetection();
     }
@@ -173,8 +187,10 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       setTranscript(result.text);
       
       if (result.audio && audioRef.current) {
+        // Garantir que o áudio anterior parou
+        audioRef.current.pause();
         audioRef.current.src = result.audio;
-        audioRef.current.play().catch(e => console.error("ERRO_VOZ_MEGATRON:", e));
+        await audioRef.current.play().catch(e => console.error("ERRO_VOZ_MEGATRON:", e));
       }
     } catch (err) {
       setTranscript('FALHA_UPLINK_NEURAL');
@@ -251,11 +267,11 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
           <div className="flex justify-between w-full mb-4 opacity-50 text-[10px] font-code tracking-[0.5em] font-black">
              <div className="flex items-center gap-2">
                <Zap className={cn("w-3 h-3", isActive && "text-primary animate-pulse")} />
-               MEGATRON_CORE_V5
+               MEGATRON_CORE_V6
              </div>
              <div className="flex items-center gap-2">
                <AudioLines className={cn("w-3 h-3", clapDetected && "text-primary animate-bounce")} />
-               SENSOR_PALMAS
+               SENSOR_PALMAS_ON
              </div>
           </div>
           
@@ -270,7 +286,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
               <Input 
                 value={scriptText}
                 onChange={(e) => setScriptText(e.target.value)}
-                placeholder="SCRIPT_VOZ_DIRETO..."
+                placeholder="SCRIPT_VOZ_MEGATRON..."
                 className="bg-primary/5 border-primary/20 text-primary placeholder:text-primary/10 font-code text-[11px] pl-10 h-10 rounded-lg focus-visible:ring-primary/40"
               />
             </form>
