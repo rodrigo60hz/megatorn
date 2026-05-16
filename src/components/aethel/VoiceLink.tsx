@@ -1,8 +1,9 @@
+
 "use client"
 
 import React, { useState, useEffect, useRef } from 'react';
 import { aiVoiceInteraction } from '@/ai/flows/ai-voice-interaction';
-import { Mic, MicOff, Radio, Loader2, AlertCircle, Volume2 } from 'lucide-react';
+import { Mic, MicOff, Radio, Loader2, AlertCircle, Volume2, Power } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -14,12 +15,15 @@ declare global {
 }
 
 export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: boolean) => void }) {
+  const [isActive, setIsActive] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [error, setError] = useState<string | null>(null);
+  
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const recognitionRef = useRef<any>(null);
+  const shouldListenRef = useRef(false);
 
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -37,32 +41,58 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       };
 
       recognition.onerror = (event: any) => {
-        if (event.error !== 'no-speech') {
+        if (event.error !== 'no-speech' && event.error !== 'aborted') {
           setError(`Erro Neural: ${event.error}`);
         }
         setIsListening(false);
-        onProcessingChange(false);
+        // Se houver erro de silêncio e o link deve estar ativo, tentamos reiniciar
+        if (event.error === 'no-speech' && shouldListenRef.current && !isPlaying) {
+          startRecognitionSafe();
+        }
       };
 
       recognition.onend = () => {
         setIsListening(false);
+        // Reinicia automaticamente se o link estiver ativo e não estivermos tocando áudio
+        if (shouldListenRef.current && !isPlaying && !isListening) {
+          startRecognitionSafe();
+        }
       };
 
       recognitionRef.current = recognition;
     } else {
       setError("Reconhecimento não suportado.");
     }
-  }, [onProcessingChange]);
+  }, [isPlaying]);
 
-  const toggleListening = () => {
-    if (isListening) {
+  const startRecognitionSafe = () => {
+    try {
+      if (recognitionRef.current && !isListening && !isPlaying) {
+        recognitionRef.current.start();
+        setIsListening(true);
+      }
+    } catch (e) {
+      console.log("Tentativa de reinicialização do mic...");
+    }
+  };
+
+  const toggleSystemPower = () => {
+    if (isActive) {
+      setIsActive(false);
+      shouldListenRef.current = false;
       recognitionRef.current?.stop();
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+      setIsPlaying(false);
+      setTranscript('Sistemas Megatron em Standby.');
     } else {
-      setTranscript('Escutando, Rodrigo meu senhor...');
+      setIsActive(true);
+      shouldListenRef.current = true;
       setError(null);
-      setIsListening(true);
-      onProcessingChange(true);
-      recognitionRef.current?.start();
+      setTranscript('Link Neural Ativado. Aguardando ordens, Rodrigo meu senhor...');
+      startRecognitionSafe();
     }
   };
 
@@ -75,10 +105,13 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       
       if (audioRef.current) {
         audioRef.current.src = result.audio;
+        setIsPlaying(true);
+        // Paramos o mic enquanto falamos para evitar eco
+        recognitionRef.current?.stop();
+        
         const playPromise = audioRef.current.play();
         if (playPromise !== undefined) {
           playPromise.catch(() => setIsPlaying(false));
-          setIsPlaying(true);
         }
       }
     } catch (err: any) {
@@ -90,8 +123,20 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         setTranscript("Falha na transmissão do link neural.");
         setError("Conexão interrompida.");
       }
+      // Se der erro, tenta voltar a ouvir se o sistema ainda estiver ativo
+      if (shouldListenRef.current) {
+        setTimeout(startRecognitionSafe, 2000);
+      }
     } finally {
       onProcessingChange(false);
+    }
+  };
+
+  const handleAudioEnd = () => {
+    setIsPlaying(false);
+    if (shouldListenRef.current) {
+      // Pequeno delay para garantir que o áudio terminou mesmo antes de abrir o mic
+      setTimeout(startRecognitionSafe, 500);
     }
   };
 
@@ -100,8 +145,10 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       <div className="hud-glass p-6 rounded-2xl flex flex-col items-center gap-4 w-72 border-primary/20 shadow-[0_0_40px_rgba(255,191,0,0.15)]">
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-2">
-            <Radio className={cn("w-4 h-4", isPlaying ? "text-primary animate-pulse" : "text-primary/40")} />
-            <span className="text-[10px] font-headline font-bold text-primary uppercase tracking-widest">Link de Voz</span>
+            <Radio className={cn("w-4 h-4", isActive ? "text-primary animate-pulse" : "text-primary/40")} />
+            <span className="text-[10px] font-headline font-bold text-primary uppercase tracking-widest">
+              {isActive ? "Link Neural Ativo" : "Link Neural Offline"}
+            </span>
           </div>
           {isPlaying && <Volume2 className="w-3 h-3 text-primary animate-bounce" />}
         </div>
@@ -109,21 +156,21 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         <div className="relative">
           <div className={cn(
             "absolute inset-0 rounded-full bg-primary/30 blur-2xl animate-pulse scale-150 transition-opacity duration-500",
-            (isListening || isPlaying) ? "opacity-100" : "opacity-0"
+            isActive ? "opacity-100" : "opacity-0"
           )} />
           
           <Button 
-            onClick={toggleListening}
-            disabled={isPlaying}
+            onClick={toggleSystemPower}
             className={cn(
               "w-24 h-24 rounded-full border-2 transition-all relative z-10 overflow-hidden",
-              isListening ? "bg-primary/20 border-primary animate-pulse" : 
+              !isActive ? "bg-black/40 border-primary/20 hover:border-primary/60" :
               isPlaying ? "bg-primary/40 border-primary scale-110 shadow-[0_0_30px_#FFBF00]" :
-              "bg-primary/10 border-primary/30 hover:border-primary/60"
+              isListening ? "bg-primary/20 border-primary animate-pulse" :
+              "bg-primary/10 border-primary/60"
             )}
           >
-            {isListening ? (
-              <Loader2 className="w-10 h-10 text-primary animate-spin" />
+            {!isActive ? (
+              <Power className="w-10 h-10 text-primary/40" />
             ) : isPlaying ? (
               <div className="flex gap-1 items-end h-8">
                 {[1, 2, 3, 4].map(i => (
@@ -134,8 +181,10 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
                   />
                 ))}
               </div>
+            ) : isListening ? (
+              <Mic className="w-10 h-10 text-primary animate-pulse" />
             ) : (
-              <Mic className="w-10 h-10 text-primary" />
+              <Loader2 className="w-10 h-10 text-primary animate-spin" />
             )}
           </Button>
         </div>
@@ -144,24 +193,36 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
           {error ? (
             <div className="flex flex-col items-center justify-center gap-1 text-primary text-[10px] font-bold">
               <div className="flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {error}</div>
-              <span className="opacity-50">Rodrigo meu senhor, aguarde.</span>
+              <span className="opacity-50">Rodrigo meu senhor, aguarde reinicialização.</span>
             </div>
           ) : (
             <p className="text-[11px] font-body text-primary/90 leading-tight italic">
-              {transcript || "Aguardando ordens, Rodrigo meu senhor..."}
+              {transcript || "Ative o Link Neural, Rodrigo meu senhor."}
             </p>
           )}
         </div>
 
-        {isPlaying && (
-          <div className="w-full h-1 bg-primary/10 rounded-full overflow-hidden">
-            <div className="h-full bg-primary animate-[scanline_2s_linear_infinite]" style={{ width: '40%' }} />
+        {isActive && (
+          <div className="w-full flex flex-col gap-1">
+            <div className="flex justify-between text-[8px] font-code opacity-50 px-1">
+              <span>ESTADO: {isPlaying ? 'TRANSMITINDO' : isListening ? 'MONITORANDO' : 'PROCESSANDO'}</span>
+              <span>SYNC_OK</span>
+            </div>
+            <div className="w-full h-1 bg-primary/10 rounded-full overflow-hidden">
+              <div 
+                className={cn(
+                  "h-full bg-primary transition-all duration-300",
+                  isPlaying ? "animate-[scanline_2s_linear_infinite] w-full" : 
+                  isListening ? "w-1/3 animate-pulse" : "w-2/3"
+                )} 
+              />
+            </div>
           </div>
         )}
 
         <audio 
           ref={audioRef} 
-          onEnded={() => setIsPlaying(false)} 
+          onEnded={handleAudioEnd} 
           className="hidden" 
         />
       </div>
