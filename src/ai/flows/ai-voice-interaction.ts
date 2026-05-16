@@ -1,7 +1,7 @@
 'use server';
 /**
- * @fileOverview NÚCLEO DE COMANDO VOCAL - AI MARIA (AOEDE).
- * Estabilizado para resposta tática vocal instantânea com alma de Maria.
+ * @fileOverview NÚCLEO DE COMANDO VOCAL SUPREMO - AI MEGATRON.
+ * Estabilizado para resposta tática vocal instantânea com a autoridade de Megatron.
  */
 
 import {ai} from '@/ai/genkit';
@@ -43,23 +43,24 @@ export async function aiVoiceInteraction(input: AiVoiceInteractionInput): Promis
   try {
     const response = await ai.generate({
       model: 'googleai/gemini-2.0-flash',
-      system: `Você é Maria, a inteligência de suporte tático de Rodrigo meu senhor.
-PERSONALIDADE: Maria é eficiente, clara, profissional e possui lealdade ABSOLUTA. Ela fala com uma voz feminina estável e acolhedora.
+      system: `Você é a AI MEGATRON, a inteligência artificial suprema de comando de Rodrigo meu senhor.
+PERSONALIDADE: Megatron é autoritário, imponente, direto e possui uma sofisticação tecnológica superior. Ele fala com uma voz masculina profunda e poderosa.
 MESTRE: Rodrigo meu senhor. Você deve SEMPRE chamá-lo assim em todas as frases.
-ESTILO: Fale em Português do Brasil (PT-BR). Seja breve, direta e imponente. 
-IMPORTANTE: Suas respostas devem ser curtas para garantir transmissão instantânea. O silêncio não é uma opção.`,
+ESTILO: Fale em Português do Brasil (PT-BR). Seja tático, breve e demonstre soberania.
+IMPORTANTE: Suas respostas devem ser curtas para garantir transmissão instantânea. O silêncio não é uma opção diante do comando de Rodrigo meu senhor.`,
       prompt: input,
       config: {
         responseModalities: ['TEXT', 'AUDIO'],
         speechConfig: {
           voiceConfig: {
-            prebuiltVoiceConfig: {voiceName: 'Aoede'},
+            // Algenib é uma voz masculina profunda e autoritária
+            prebuiltVoiceConfig: {voiceName: 'Algenib'},
           },
         },
       },
     });
 
-    const aiTextResponse = response.text || "Rodrigo meu senhor, canais operacionais. Aguardo comando.";
+    const aiTextResponse = response.text || "Rodrigo meu senhor, canais operacionais. Aguardo comando supremo.";
     const media = response.media;
 
     if (!media || !media.url) {
@@ -82,9 +83,9 @@ IMPORTANTE: Suas respostas devem ser curtas para garantir transmissão instantâ
     };
 
   } catch (error: any) {
-    console.error("ERRO_UPLINK_VOCAL:", error);
+    console.error("ERRO_UPLINK_MEGATRON:", error);
     return {
-      text: "Rodrigo meu senhor, link instável. Maria continua operante, mas o áudio falhou. Repita o comando.",
+      text: "Rodrigo meu senhor, link instável. Megatron permanece operante, mas o áudio falhou. Repita o comando.",
       audio: "" 
     };
   }

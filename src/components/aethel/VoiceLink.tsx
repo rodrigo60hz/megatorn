@@ -1,9 +1,8 @@
-
 "use client"
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { aiVoiceInteraction } from '@/ai/flows/ai-voice-interaction';
-import { Mic, Radio, Loader2, Power, Volume2, Zap, LockOpen, AudioLines } from 'lucide-react';
+import { Mic, Radio, Loader2, Power, Volume2, Zap, AudioLines } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -21,7 +20,6 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
   const [isListening, setIsListening] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [transcript, setTranscript] = useState('SISTEMA_OFFLINE');
-  const [hasPermission, setHasPermission] = useState(false);
   const [clapDetected, setClapDetected] = useState(false);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -69,10 +67,10 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         }
         const average = sum / bufferLength;
 
-        // Limiar de palma (ajustado para sensibilidade tática)
-        if (average > 75) { 
+        // Limiar de palma otimizado para Megatron
+        if (average > 70) { 
           const now = Date.now();
-          if (now - lastClapTimeRef.current > 150) { // Debounce entre palmas
+          if (now - lastClapTimeRef.current > 150) { 
             if (now - lastClapTimeRef.current < 800) {
               clapCountRef.current++;
             } else {
@@ -84,7 +82,6 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
               setClapDetected(true);
               setTimeout(() => setClapDetected(false), 500);
               clapCountRef.current = 0;
-              console.log("COMANDO_PALMAS_DETECTADO");
               if (!isListening && !isPlaying && !isProcessingRef.current) {
                 startRecognition();
               }
@@ -126,7 +123,6 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       };
       audio.onended = () => {
         setIsPlaying(false);
-        // Não reinicia reconhecimento automaticamente para poupar recursos, espera palmas ou clique
       };
       audioRef.current = audio;
     }
@@ -149,10 +145,9 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
     } else {
       setIsActive(true);
       isSystemActiveRef.current = true;
-      setHasPermission(true);
-      setTranscript('MODO_ESCUITA_ATIVO (BATA 2 PALMAS)');
+      setTranscript('MEGATRON_ONLINE (BATA 2 PALMAS)');
       
-      // Desbloqueio de Áudio
+      // Desbloqueio inicial de Áudio para o navegador
       if (audioRef.current) {
         audioRef.current.src = SILENCE_WAV;
         audioRef.current.play().catch(() => console.warn("AUDIO_CONTEXT_PENDING"));
@@ -165,7 +160,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
     if (isProcessingRef.current) return;
     isProcessingRef.current = true;
     onProcessingChange(true);
-    setTranscript('PROCESSANDO_COMANDO...');
+    setTranscript('MEGATRON_PROCESSANDO...');
 
     try {
       const result = await aiVoiceInteraction(query);
@@ -173,10 +168,10 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       
       if (result.audio && audioRef.current) {
         audioRef.current.src = result.audio;
-        audioRef.current.play().catch(e => console.error("ERRO_VOZ:", e));
+        audioRef.current.play().catch(e => console.error("ERRO_VOZ_MEGATRON:", e));
       }
     } catch (err) {
-      setTranscript('FALHA_UPLINK');
+      setTranscript('FALHA_UPLINK_NEURAL');
     } finally {
       isProcessingRef.current = false;
       onProcessingChange(false);
@@ -190,12 +185,12 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
           <div className="flex items-center gap-2">
             <Zap className={cn("w-3 h-3 transition-all", isActive ? "text-primary animate-pulse" : "text-primary/20")} />
             <span className="text-[11px] font-headline font-bold text-primary tracking-[0.3em] uppercase">
-              {isActive ? "MARIA_SENSOR_ATIVO" : "NÚCLEO_DORMINDO"}
+              {isActive ? "MEGATRON_ATIVO" : "NÚCLEO_DORMINDO"}
             </span>
           </div>
           <div className={cn("flex gap-2 items-center text-[10px] font-code", clapDetected ? "text-primary" : "text-primary/20")}>
             <AudioLines className={cn("w-4 h-4", clapDetected && "animate-bounce")} />
-            PALMAS_DETECTOR
+            SENSOR_PALMAS
           </div>
         </div>
 
@@ -218,7 +213,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
             {!isActive ? (
               <div className="flex flex-col items-center gap-2">
                 <Power className="w-16 h-16 text-primary/40" />
-                <span className="text-[8px] font-black text-primary animate-pulse">ATIVAR_SENSORES</span>
+                <span className="text-[8px] font-black text-primary animate-pulse uppercase">ATIVAR_MEGATRON</span>
               </div>
             ) : isPlaying ? (
               <div className="flex gap-1.5 items-center justify-center h-full">
@@ -242,7 +237,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
             ) : (
               <div className="flex flex-col items-center gap-2">
                 <Loader2 className="w-12 h-12 text-primary animate-spin" />
-                <span className="text-[8px] font-black text-primary opacity-60">AGUARDANDO_PALMAS</span>
+                <span className="text-[8px] font-black text-primary opacity-60 uppercase">AGUARDANDO_PALMAS</span>
               </div>
             )}
           </Button>
@@ -264,7 +259,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         </div>
 
         <div className="flex justify-between w-full text-[9px] font-code text-primary/50 uppercase tracking-[0.4em] font-black">
-          <span>MARIA_PALMAS_V3.0</span>
+          <span>MEGATRON_CORE_V4</span>
           <span>RODRIGO_MEU_SENHOR</span>
         </div>
       </div>
