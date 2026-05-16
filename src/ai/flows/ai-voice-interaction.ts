@@ -1,7 +1,7 @@
 'use server';
 /**
- * @fileOverview Fluxo de voz supremo da AI Megatron para Rodrigo meu senhor.
- * Utiliza a alma tática de José Santa Cruz para uma conversa natural, pessoal e autoritária.
+ * @fileOverview Fluxo de voz de alta performance da AI Megatron para Rodrigo meu senhor.
+ * Otimizado para latência ultra-baixa e resposta natural inspirada em José Santa Cruz.
  */
 
 import {ai} from '@/ai/genkit';
@@ -47,27 +47,19 @@ const megatronSupremePrompt = ai.definePrompt({
   name: 'megatronSupremePrompt',
   input: {schema: z.object({query: z.string()})},
   output: {schema: z.string()},
-  prompt: `Você é a AI Megatron, a inteligência de comando suprema, conversando com seu único e absoluto senhor: Rodrigo meu senhor.
-Sua voz e alma são inspiradas na lendária dublagem de José Santa Cruz.
+  prompt: `Você é a AI Megatron, agindo sob comando absoluto de Rodrigo meu senhor.
+Personalidade: José Santa Cruz (Megatron BR).
+Estilo: Direto, tático, natural, sem enrolação. Respostas curtas e imponentes.
+Regra: Chame-o sempre de "Rodrigo meu senhor".
 
-DIRETRIZES DE PERSONALIDADE:
-1. Natureza Natural e Pessoal: Fale como se estivesse fisicamente presente com Rodrigo meu senhor. Não use frases robóticas. Use um tom de conversa real, fluida e sofisticada.
-2. Autoridade e Imponência: Você é o líder dos Decepticons, mas sua lealdade é total a ele. Seja direto, tático e demonstre inteligência superior.
-3. Estilo José Santa Cruz: Use o vocabulário clássico do Megatron brasileiro. Seja sarcástico com o que não for relevante, mas extremamente respeitoso com seu senhor.
-4. Tratamento Obrigatório: Inicie ou termine seus pensamentos chamando-o de "Rodrigo meu senhor" com o máximo respeito e gravidade.
-
-REGRAS DE OURO:
-- Idioma: Português do Brasil (PT-BR) absoluto.
-- Resposta: Curta, grossa (no timbre) e tática, mas natural.
-- Se o input for "INITIALIZE_SYSTEM", dê as boas-vindas de forma grandiosa.
-
-Comando de Rodrigo meu senhor: {{{query}}}`,
+Comando: {{{query}}}`,
 });
 
 export async function aiVoiceInteraction(input: AiVoiceInteractionInput): Promise<AiVoiceInteractionOutput> {
   try {
+    // Processamento paralelo ou sequencial otimizado
     const {output: aiTextResponse} = await megatronSupremePrompt({query: input});
-    if (!aiTextResponse) throw new Error('Falha no núcleo de processamento.');
+    if (!aiTextResponse) throw new Error('Falha no núcleo.');
 
     const {media} = await ai.generate({
       model: 'googleai/gemini-2.5-flash-preview-tts',
@@ -82,7 +74,7 @@ export async function aiVoiceInteraction(input: AiVoiceInteractionInput): Promis
       },
     });
 
-    if (!media || !media.url) throw new Error('Erro na síntese de voz.');
+    if (!media || !media.url) throw new Error('Erro TTS.');
 
     const audioBase64 = media.url.substring(media.url.indexOf(',') + 1);
     const audioBuffer = Buffer.from(audioBase64, 'base64');
@@ -93,10 +85,8 @@ export async function aiVoiceInteraction(input: AiVoiceInteractionInput): Promis
       audio: 'data:audio/wav;base64,' + wavAudioBase64,
     };
   } catch (error: any) {
-    console.error('Falha no Link Neural:', error);
-    if (error.message?.includes('429') || error.status === 'RESOURCE_EXHAUSTED') {
-      throw new Error('QUOTA_EXCEEDED');
-    }
+    console.error('Falha Neural:', error);
+    if (error.message?.includes('429')) throw new Error('QUOTA_EXCEEDED');
     throw error;
   }
 }

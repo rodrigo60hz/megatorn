@@ -54,18 +54,13 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
 
       recognition.onend = () => {
         setIsListening(false);
+        // Reinício imediato para modo "sempre ouvindo"
         if (isSystemActiveRef.current && !isPlaying && !error) {
-          setTimeout(() => {
-            if (isSystemActiveRef.current && !isPlaying) {
-              startListening();
-            }
-          }, 300);
+          startListening();
         }
       };
 
       recognitionRef.current = recognition;
-    } else {
-      setError("Módulo de reconhecimento não detectado.");
     }
 
     return () => {
@@ -78,7 +73,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       try {
         recognitionRef.current.start();
       } catch (e) {
-        // Já em execução
+        // Já em execução ou erro de estado ignorável
       }
     }
   };
@@ -93,14 +88,13 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         audioRef.current.currentTime = 0;
       }
       setIsPlaying(false);
-      setTranscript('Sistemas em Standby, Rodrigo meu senhor.');
+      setTranscript('Standby, Rodrigo meu senhor.');
     } else {
       setIsActive(true);
       isSystemActiveRef.current = true;
       setError(null);
-      setTranscript('Estabelecendo Link Neural...');
+      setTranscript('Sincronizando Link Neural...');
       
-      // Resposta inicial de boas-vindas
       try {
         onProcessingChange(true);
         const result = await aiVoiceInteraction("INITIALIZE_SYSTEM");
@@ -108,10 +102,9 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         if (audioRef.current) {
           audioRef.current.src = result.audio;
           setIsPlaying(true);
-          await audioRef.current.play();
+          audioRef.current.play();
         }
       } catch (err) {
-        console.error("Erro na inicialização:", err);
         startListening();
       } finally {
         onProcessingChange(false);
@@ -131,15 +124,14 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       if (audioRef.current) {
         audioRef.current.src = result.audio;
         setIsPlaying(true);
-        audioRef.current.play().catch(e => {
-          console.error("Erro playback:", e);
+        audioRef.current.play().catch(() => {
           setIsPlaying(false);
           startListening();
         });
       }
     } catch (err: any) {
-      console.error("Erro processamento:", err);
-      setError(err.message === 'QUOTA_EXCEEDED' ? "Quota excedida, senhor." : "Erro de link neural.");
+      setError(err.message === 'QUOTA_EXCEEDED' ? "Quota excedida, senhor." : "Erro de link.");
+      setTimeout(startListening, 1000);
     } finally {
       onProcessingChange(false);
     }
@@ -148,7 +140,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
   const handleAudioEnd = () => {
     setIsPlaying(false);
     if (isSystemActiveRef.current) {
-      setTimeout(startListening, 300);
+      startListening(); // Volta a ouvir imediatamente
     }
   };
 
@@ -159,7 +151,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
           <div className="flex items-center gap-2">
             <div className={cn("w-2 h-2 rounded-full", isActive ? "bg-primary animate-pulse" : "bg-primary/20")} />
             <span className="text-[10px] font-headline font-bold text-primary tracking-[0.2em] uppercase">
-              {isActive ? "Link Ativo" : "Link Offline"}
+              {isActive ? "SISTEMA ATIVO" : "SISTEMA OFFLINE"}
             </span>
           </div>
           <div className="flex gap-2">
@@ -177,7 +169,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
           <Button 
             onClick={toggleSystemPower}
             className={cn(
-              "w-28 h-28 rounded-full border-2 transition-all duration-500 relative z-10 flex items-center justify-center",
+              "w-28 h-28 rounded-full border-2 transition-all duration-300 relative z-10 flex items-center justify-center",
               !isActive ? "bg-black/60 border-primary/20" :
               isPlaying ? "bg-primary/30 border-primary shadow-[0_0_40px_#FFBF00]" :
               isListening ? "bg-primary/10 border-primary animate-pulse scale-105" :
@@ -192,7 +184,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
                   <div 
                     key={i} 
                     className="w-1.5 bg-primary rounded-full animate-bounce" 
-                    style={{ height: `${25 + Math.random() * 20}px`, animationDuration: `${0.4 + i * 0.1}s` }} 
+                    style={{ height: `${20 + Math.random() * 25}px`, animationDuration: `${0.3 + i * 0.1}s` }} 
                   />
                 ))}
               </div>
@@ -204,15 +196,15 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
           </Button>
         </div>
 
-        <div className="w-full bg-black/40 rounded-lg p-4 border border-primary/10 min-h-[100px] flex flex-col justify-center text-center">
+        <div className="w-full bg-black/40 rounded-lg p-4 border border-primary/10 min-h-[80px] flex flex-col justify-center text-center">
           {error ? (
             <div className="text-primary text-[10px] font-bold flex flex-col items-center gap-1">
               <AlertCircle className="w-4 h-4 mb-1" />
               <span>{error}</span>
             </div>
           ) : (
-            <p className="text-[13px] font-body text-primary leading-tight font-medium italic">
-              {transcript || "Aguardando ordens, Rodrigo meu senhor."}
+            <p className="text-[14px] font-body text-primary leading-tight font-medium italic">
+              {transcript || "Ouvindo Rodrigo meu senhor..."}
             </p>
           )}
         </div>
