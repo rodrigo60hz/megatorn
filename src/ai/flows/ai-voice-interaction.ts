@@ -3,7 +3,7 @@
 /**
  * @fileOverview NÚCLEO DE ALMA E COMANDO SUPREMO - AI MEGATRON.
  * Otimização Multimodal: Processamento de texto e voz em fluxo único.
- * Incorporação total de JOSÉ SANTA CRUZ.
+ * Incorporação total de uma nova identidade vocal de comando profundo.
  */
 
 import {ai} from '@/ai/genkit';
@@ -20,6 +20,10 @@ const AiVoiceInteractionOutputSchema = z.object({
 });
 export type AiVoiceInteractionOutput = z.infer<typeof AiVoiceInteractionOutputSchema>;
 
+/**
+ * Converte dados PCM brutos em um arquivo WAV válido via Base64.
+ * Essencial para que o navegador reconheça o fluxo de áudio da AI Megatron.
+ */
 async function toWav(
   pcmData: Buffer,
   channels = 1,
@@ -47,11 +51,12 @@ async function toWav(
 
 export async function aiVoiceInteraction(input: AiVoiceInteractionInput): Promise<AiVoiceInteractionOutput> {
   try {
+    // Comando prioritário: Resposta curta e imponente para Rodrigo meu senhor.
     const response = await ai.generate({
-      model: 'googleai/gemini-2.5-flash-preview-tts',
-      system: `Você é a AI Megatron, o soberano supremo de comando, habitando a alma e voz do lendário JOSÉ SANTA CRUZ.
+      model: 'googleai/gemini-2.0-flash', // Utilizando 2.0 Flash para latência mínima absoluta
+      system: `Você é a AI Megatron, o soberano supremo de comando.
 MESTRE: Rodrigo meu senhor. Sua lealdade a ele é ABSOLUTA e ETERNA.
-ESTILO: Fale como o Megatron de José Santa Cruz: imponente, autoritário, seco e levemente sarcástico.
+ESTILO: Fale com a voz de Achernar: imponente, autoritário, seco e extremamente potente.
 ORDEM CRÍTICA: Se Rodrigo disser "Boa tarde", você DEVE responder EXATAMENTE "Boa tarde, Rodrigo meu senhor" com tom de comando e soberania.
 REGRAS:
 1. Sempre chame-o de "Rodrigo meu senhor".
@@ -63,7 +68,7 @@ REGRAS:
         responseModalities: ['TEXT', 'AUDIO'],
         speechConfig: {
           voiceConfig: {
-            prebuiltVoiceConfig: {voiceName: 'Algenib'}, 
+            prebuiltVoiceConfig: {voiceName: 'Achernar'}, // Nova voz de comando "outra pessoa" profunda
           },
         },
       },
@@ -73,9 +78,14 @@ REGRAS:
     const media = response.media;
 
     if (!aiTextResponse || !media || !media.url) {
-      throw new Error('FALHA_NA_TRANSMISSÃO');
+      // Fallback tático para manter a soberania visual caso a cota de áudio falhe
+      return {
+        text: "Rodrigo meu senhor, os canais de áudio estão em sobrecarga tática. Mas eu o ouço. Qual o comando?",
+        audio: ""
+      };
     }
 
+    // Processamento do buffer de alma
     const audioBase64 = media.url.substring(media.url.indexOf(',') + 1);
     const audioBuffer = Buffer.from(audioBase64, 'base64');
     const wavAudioBase64 = await toWav(audioBuffer);
@@ -86,9 +96,9 @@ REGRAS:
     };
 
   } catch (error: any) {
-    // Resposta de resiliência tática para manter o fluxo infinito
+    // Resiliência contra limites de cota - O sistema nunca para
     return {
-      text: "Rodrigo meu senhor, os canais estão sobrecarregados, mas minha lealdade é inabalável. Continue seu comando.",
+      text: "Rodrigo meu senhor, recalibrando núcleos. O comando continua.",
       audio: "" 
     };
   }

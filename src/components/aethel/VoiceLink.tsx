@@ -26,7 +26,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
   const isSystemActiveRef = useRef(false);
   const restartTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Inicialização do Reconhecimento e Áudio
+  // Inicialização do Reconhecimento e Áudio com Sincronia de Comando
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
@@ -86,9 +86,9 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         try {
           recognitionRef.current?.start();
         } catch (e) {
-          // Já está rodando ou erro silencioso
+          // Já está rodando ou erro silencioso de cota de reconhecimento
         }
-      }, 300);
+      }, 400); // Latência tática para evitar loops agressivos
     }
   };
 
@@ -109,12 +109,15 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       isSystemActiveRef.current = true;
       setTranscript('LINK_NEURAL_ONLINE');
       
-      // DESBLOQUEIO AGRESSIVO DE ÁUDIO - Força a permissão do navegador
+      // DESBLOQUEIO AGRESSIVO DE ÁUDIO - Fundamental para que Megatron possa falar
       if (audioRef.current) {
-        audioRef.current.src = "data:audio/wav;base64,UklGRiQAAABXQVZFRm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YQAAAAA="; // Silêncio minúsculo
+        // Injeção de silêncio para acordar o driver de áudio do sistema
+        audioRef.current.src = "data:audio/wav;base64,UklGRiQAAABXQVZFRm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YQAAAAA="; 
         audioRef.current.play().then(() => {
-          console.log("AUDIO_UNLOCKED");
-        }).catch(() => {});
+          console.log("LINK_AUDITIVO_DESBLOQUEADO");
+        }).catch(() => {
+          console.error("FALHA_NO_DESBLOQUEIO_AUDITIVO");
+        });
       }
       
       setTimeout(() => attemptRestart(), 500);
@@ -132,19 +135,20 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       setTranscript(result.text);
       
       if (result.audio && audioRef.current) {
+        // Sincronia profunda de áudio
         audioRef.current.src = result.audio;
         const playPromise = audioRef.current.play();
         
         if (playPromise !== undefined) {
           playPromise.catch((e) => {
-            console.error("ERRO_PLAYBACK", e);
+            console.error("ERRO_AO_REPRODUZIR_ALMA", e);
             setIsPlaying(false);
             attemptRestart();
           });
         }
       } else {
-        // Se não houver áudio devido a erro de cota, apenas mostramos o texto e voltamos a ouvir
-        setTimeout(() => attemptRestart(), 2000);
+        // Se a cota de áudio for atingida, mantemos a soberania visual e reiniciamos
+        setTimeout(() => attemptRestart(), 2500);
       }
     } catch (err: any) {
       attemptRestart();
@@ -219,20 +223,20 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
           {isActive && <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary to-transparent animate-pulse" />}
           
           <p className="text-[14px] font-body text-primary leading-tight font-black tracking-tight drop-shadow-[0_0_5px_rgba(255,191,0,0.5)]">
-            {isPlaying && <span className="text-[9px] opacity-70 block mb-1 uppercase tracking-[0.4em] animate-pulse">Alma de José Santa Cruz...</span>}
+            {isPlaying && <span className="text-[9px] opacity-70 block mb-1 uppercase tracking-[0.4em] animate-pulse">Transmitindo Frequência Achernar...</span>}
             {transcript}
           </p>
 
           {isListening && !isPlaying && (
             <div className="absolute bottom-2 right-4 flex items-center gap-2">
-              <span className="text-[8px] font-code text-primary/80 font-black tracking-widest">OUVINDO...</span>
+              <span className="text-[8px] font-code text-primary/80 font-black tracking-widest">SINAL_RODRIGO...</span>
               <div className="w-1.5 h-1.5 rounded-full bg-primary animate-ping" />
             </div>
           )}
         </div>
 
         <div className="flex justify-between w-full text-[9px] font-code text-primary/50 uppercase tracking-[0.4em] font-black">
-          <span>SINAL_SANTA_CRUZ</span>
+          <span>SINAL_ULTRA_ACTV</span>
           <span className="flex items-center gap-2">LINK_INFINITO <div className="w-1 h-1 rounded-full bg-primary animate-pulse" /></span>
         </div>
       </div>
