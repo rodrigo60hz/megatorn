@@ -13,7 +13,7 @@ declare global {
   }
 }
 
-// Áudio de silêncio estruturado para desbloqueio de driver do navegador
+// Áudio de silêncio estruturado para desbloqueio agressivo de driver do navegador
 const SILENCE_WAV = "data:audio/wav;base64,UklGRigAAABXQVZFRm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YQQAAAAEAA==";
 
 export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: boolean) => void }) {
@@ -36,9 +36,9 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         try {
           recognitionRef.current?.start();
         } catch (e) {
-          // Ignorar se já estiver rodando
+          // Já em execução ou erro silencioso
         }
-      }, 300); 
+      }, 500); 
     }
   }, [isPlaying, isListening]);
 
@@ -52,7 +52,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
 
       recognition.onstart = () => {
         setIsListening(true);
-        setTranscript('MARIA_OUVINDO...');
+        setTranscript('OUVINDO_RODRIGO...');
       };
 
       recognition.onresult = (event: any) => {
@@ -62,7 +62,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         }
       };
 
-      recognition.onerror = (event: any) => {
+      recognition.onerror = () => {
         setIsListening(false);
         if (isSystemActiveRef.current && !isPlaying && !isProcessingRef.current) {
           attemptRestart();
@@ -115,18 +115,18 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       setIsActive(true);
       setHasPermission(true);
       isSystemActiveRef.current = true;
-      setTranscript('SISTEMA_MARIA_PRONTO');
+      setTranscript('MARIA_PRONTA');
       
-      // DESBLOQUEIO AGRESSIVO DE ÁUDIO
+      // DESBLOQUEIO AGRESSIVO DE ÁUDIO NO PRIMEIRO CLIQUE
       if (audioRef.current) {
         audioRef.current.src = SILENCE_WAV;
         audioRef.current.play()
           .then(() => {
-            console.log("DRIVER_AUDIO_ESTABILIZADO");
+            console.log("DRIVER_AUDIO_DESBLOQUEADO");
             setTimeout(() => attemptRestart(), 500);
           })
           .catch(() => {
-            console.warn("DRIVER_AUDIO_BLOQUEADO_PELA_SEGURANCA");
+            console.warn("DRIVER_AUDIO_BLOQUEADO");
             setTimeout(() => attemptRestart(), 500);
           });
       }
@@ -147,21 +147,28 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       setTranscript(result.text);
       
       if (result.audio && audioRef.current) {
+        // Limpar fonte anterior para garantir novo carregamento
+        audioRef.current.pause();
         audioRef.current.src = result.audio;
+        audioRef.current.load();
+        
         const playPromise = audioRef.current.play();
         if (playPromise !== undefined) {
-          playPromise.catch(() => {
+          playPromise.catch((e) => {
+            console.error("ERRO_PLAYBACK:", e);
             setIsPlaying(false);
             isProcessingRef.current = false;
             attemptRestart();
           });
         }
       } else {
+        console.warn("SEM_CONTEUDO_AUDIO");
         isProcessingRef.current = false;
         setTimeout(() => attemptRestart(), 2000);
       }
     } catch (err: any) {
-      setTranscript('ERRO_NO_LINK_NEURAL');
+      console.error("ERRO_PROCESSAMENTO_VOZ:", err);
+      setTranscript('ERRO_LINK_NEURAL');
       isProcessingRef.current = false;
       attemptRestart();
     } finally {
@@ -242,14 +249,14 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
 
           {isListening && !isPlaying && (
             <div className="absolute bottom-2 right-4 flex items-center gap-2">
-              <span className="text-[8px] font-code text-primary/80 font-black tracking-widest">OUVINDO_RODRIGO...</span>
+              <span className="text-[8px] font-code text-primary/80 font-black tracking-widest">OUVINDO...</span>
               <div className="w-1.5 h-1.5 rounded-full bg-primary animate-ping" />
             </div>
           )}
         </div>
 
         <div className="flex justify-between w-full text-[9px] font-code text-primary/50 uppercase tracking-[0.4em] font-black">
-          <span>MARIA_VOTZ_V2</span>
+          <span>MARIA_VOTZ_V2.5</span>
           <span className="flex items-center gap-2">RODRIGO_MEU_SENHOR <div className="w-1 h-1 rounded-full bg-primary animate-pulse" /></span>
         </div>
       </div>
