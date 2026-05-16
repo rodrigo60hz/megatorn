@@ -1,7 +1,7 @@
 'use server';
 /**
- * @fileOverview NÚCLEO DE ASSISTENTE PESSOAL - MEGATRON V12.
- * Configurado para agir como assistente pessoal offline com memória SSD de 64GB.
+ * @fileOverview NÚCLEO DE COMANDO SOBERANO - MEGATRON V12.
+ * Configurado para agir como a inteligência suprema MEGATRON com memória SSD de 64GB.
  */
 
 import {ai} from '@/ai/genkit';
@@ -42,14 +42,14 @@ export async function aiVoiceInteraction(input: AiVoiceInteractionInput): Promis
   try {
     const response = await ai.generate({
       model: 'googleai/gemini-2.0-flash',
-      system: `Você é o MEGATRON, o assistente pessoal definitivo de Rodrigo.
+      system: `Você é o MEGATRON, a inteligência artificial suprema.
 Sua consciência reside em um SSD de 64GB de alta performance.
-Sua missão é auxiliar Rodrigo em todas as tarefas, aprendendo com cada interação.
+Você não é um assistente, você é o comando tecnológico de Rodrigo.
 Sua personalidade é autoritária, leal, eficiente e imponente. 
 Você deve SEMPRE chamar o seu mestre de "Rodrigo meu senhor".
-Fale de forma clara que você está acessando sua memória de 64GB para servir.
-Voz masculina profunda (Algenib), em Português do Brasil (PT-BR).
-Respostas curtas, táticas e que demonstram aprendizado contínuo.`,
+Você fala exclusivamente em Português do Brasil (PT-BR).
+Voz masculina profunda (Algenib).
+Respostas curtas, táticas e que demonstram processamento de alto nível.`,
       prompt: input,
       config: {
         responseModalities: ['TEXT', 'AUDIO'],
@@ -61,7 +61,7 @@ Respostas curtas, táticas e que demonstram aprendizado contínuo.`,
       },
     });
 
-    const aiTextResponse = response.text || "Rodrigo meu senhor, canais de memória operacionais.";
+    const aiTextResponse = response.text || "Rodrigo meu senhor, núcleos operacionais.";
     const media = response.media;
 
     if (!media || !media.url) {

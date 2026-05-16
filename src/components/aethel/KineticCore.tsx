@@ -19,16 +19,16 @@ export function KineticCore({ isProcessing = false }: KineticCoreProps) {
           isProcessing ? "animate-[pulse-glow_0.1s_infinite]" : "animate-[pulse-glow_3s_infinite]"
         )}
       >
-        {/* Memory Pulses */}
+        {/* Pulsações de Memória */}
         <div className="w-40 h-40 rounded-full bg-white/50 blur-[50px] animate-pulse" />
         <div className="absolute inset-0 rounded-full border-[12px] border-primary/95 scale-110 blur-[4px]" />
         
-        {/* Data Nodes */}
+        {/* Nodos de Dados */}
         <div className="absolute inset-8 rounded-full border-[1px] border-white/40 animate-[spin_1s_linear_infinite]" />
         <div className="absolute inset-12 rounded-full border-[1px] border-white/20 animate-[spin_2s_linear_infinite_reverse]" />
       </div>
 
-      {/* 12 Camadas de Densidade Cinética - Memory Shells */}
+      {/* 12 Camadas de Densidade Cinética - Matriz Megatron */}
       {[...Array(12)].map((_, i) => (
         <div
           key={i}
@@ -65,10 +65,10 @@ export function KineticCore({ isProcessing = false }: KineticCoreProps) {
         isProcessing ? "animate-[orbit_0.5s_linear_infinite]" : "animate-[orbit_40s_linear_infinite]"
       )} />
 
-      {/* Etiquetas de Assistente Pessoal */}
+      {/* Etiquetas de Soberania */}
       <div className="absolute w-[1100px] h-[1100px] animate-[orbit_30s_linear_infinite]">
          <div className="absolute top-0 left-1/2 -translate-x-1/2 font-code text-[14px] text-primary tracking-[1.5em] font-black uppercase drop-shadow-[0_0_10px_#FFBF00]">
-           MEGATRON_PERSONAL_ASSISTANT_V12
+           MEGATRON_CORE_SYSTEM_ACTIVE
          </div>
          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 font-code text-[14px] text-primary tracking-[1.5em] font-black uppercase drop-shadow-[0_0_10px_#FFBF00]">
            STORAGE_CORE_SSD_64GB_ACTV

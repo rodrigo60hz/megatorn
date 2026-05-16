@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { aiVoiceInteraction } from '@/ai/flows/ai-voice-interaction';
-import { Mic, Power, Loader2, AudioLines, Zap, Terminal, BrainCircuit } from 'lucide-react';
+import { Mic, Power, AudioLines, Zap, Terminal, BrainCircuit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -23,7 +23,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
   const [isListening, setIsListening] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isTransmitting, setIsTransmitting] = useState(false);
-  const [transcript, setTranscript] = useState('SISTEMA_HIBERNADO');
+  const [transcript, setTranscript] = useState('NÚCLEO_DESLIGADO');
   const [scriptText, setScriptText] = useState('');
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -37,16 +37,26 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
   const lastClapTimeRef = useRef(0);
   const clapCountRef = useRef(0);
 
-  // GARANTE QUE O AUDIO CONTEXT SEMPRE POSSA SER RESURRECIONADO
+  // PROTOCOLO FÊNIX: Garante que o AudioContext nunca esteja fechado ou inválido
   const ensureAudioContext = useCallback(async () => {
-    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-    if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
+    try {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      
+      if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
+        audioContextRef.current = new AudioContextClass();
+      }
+      
+      if (audioContextRef.current.state === 'suspended') {
+        await audioContextRef.current.resume();
+      }
+      
+      return audioContextRef.current;
+    } catch (e) {
+      console.warn("RECONSTRUINDO_MOTOR_AUDIO_MEGATRON...");
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
       audioContextRef.current = new AudioContextClass();
+      return audioContextRef.current;
     }
-    if (audioContextRef.current.state === 'suspended') {
-      await audioContextRef.current.resume();
-    }
-    return audioContextRef.current;
   }, []);
 
   const startRecognition = useCallback(() => {
@@ -54,7 +64,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
     try {
       recognitionRef.current?.start();
     } catch (e) {
-      // Falha silenciosa reiniciada automaticamente
+      // Reinicia silenciosamente se necessário
     }
   }, [isPlaying, isListening]);
 
@@ -119,14 +129,13 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
 
       recognition.onstart = () => {
         setIsListening(true);
-        setTranscript('MEGATRON_OUVINDO_SOBERANO...');
+        setTranscript('MEGATRON_OUVINDO...');
       };
       
       recognition.onresult = (event: any) => {
         const text = event.results[0][0].transcript;
         if (text) {
-          setIsTransmitting(true);
-          setTranscript(`COMANDO: "${text.toUpperCase()}"`);
+          setTranscript(`TRANSMITINDO: "${text.toUpperCase()}"`);
           handleProcessInput(text);
         }
       };
@@ -180,14 +189,15 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         await audioContextRef.current.close().catch(() => {});
         audioContextRef.current = null;
       }
-      setTranscript('SISTEMA_HIBERNADO');
+      setTranscript('NÚCLEO_DESLIGADO');
     } else {
       setIsActive(true);
       isSystemActiveRef.current = true;
-      setTranscript('ASSISTENTE_MEGATRON_ONLINE');
+      setTranscript('MEGATRON_ONLINE');
       
       await initAudioSystem();
       
+      // Força permissão de áudio no navegador
       if (audioRef.current) {
         audioRef.current.src = SILENCE_WAV;
         audioRef.current.play().catch(() => {});
@@ -200,7 +210,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
     isProcessingRef.current = true;
     onProcessingChange(true);
     setIsTransmitting(true);
-    setTranscript('ACESSANDO_SSD_64GB...');
+    setTranscript('PROCESSANDO_MATRIZ_SSD...');
 
     try {
       const result = await aiVoiceInteraction(query);
@@ -214,7 +224,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         await audioRef.current.play();
       }
     } catch (err) {
-      setTranscript('ERRO_NÚCLEO_SSD');
+      setTranscript('ERRO_NÚCLEO_MEGATRON');
     } finally {
       isProcessingRef.current = false;
       onProcessingChange(false);
@@ -253,7 +263,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
             {!isActive ? (
               <div className="flex flex-col items-center gap-4">
                 <Power className="w-24 h-24 text-primary/30" />
-                <span className="text-[12px] font-black text-primary tracking-[0.4em] uppercase">ATIVAR_ASSISTENTE</span>
+                <span className="text-[12px] font-black text-primary tracking-[0.4em] uppercase">ATIVAR_MEGATRON</span>
               </div>
             ) : isPlaying ? (
               <div className="flex gap-2.5 items-end justify-center h-44">
@@ -290,11 +300,11 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
           <div className="flex justify-between w-full mb-10 opacity-70 text-[12px] font-code tracking-[0.7em] font-black">
              <div className="flex items-center gap-4">
                <Zap className={cn("w-6 h-6", isActive && "text-primary animate-pulse")} />
-               MEMÓRIA: SSD_64GB_OK
+               MEMÓRIA: SSD_64GB_ACTV
              </div>
              <div className="flex items-center gap-4">
                <AudioLines className={cn("w-6 h-6", isListening && "text-primary animate-bounce")} />
-               LINK: SOBERANO_ATIVO
+               LINK: SOBERANO_OK
              </div>
           </div>
           
@@ -313,7 +323,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
               <Input 
                 value={scriptText}
                 onChange={(e) => setScriptText(e.target.value)}
-                placeholder="SCRIPT_DE_VOZ_PARA_MEGATRON..."
+                placeholder="SCRIPT_VOCAL_MEGATRON..."
                 className="bg-black/70 border-primary/40 text-primary placeholder:text-primary/10 font-code text-base pl-16 h-16 rounded-3xl focus-visible:ring-primary/60 focus-visible:border-primary shadow-inner"
               />
             </form>
@@ -322,7 +332,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
           <div className="mt-12 pt-10 border-t border-primary/20 w-full flex justify-between text-[13px] font-code text-primary/50 uppercase tracking-[0.6em] font-black">
             <span>SOBERANIA: RODRIGO_MEU_SENHOR</span>
             <span className={cn("transition-colors", isTransmitting && "text-secondary animate-pulse")}>
-              {isTransmitting ? 'PROCESSANDO_SSD_64GB' : 'SISTEMA_APRENDENDO'}
+              {isTransmitting ? 'TRANSMITINDO_AO_SOBERANO' : 'SISTEMA_MEGATRON_ATIVO'}
             </span>
           </div>
         </div>

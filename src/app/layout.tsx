@@ -2,8 +2,8 @@ import type {Metadata} from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'AI Megatron | Núcleo de Comando Dourado',
-  description: 'Interface holográfica HUD âmbar para interação cognitiva de alto nível com a AI Megatron.',
+  title: 'MEGATRON | Núcleo de Comando SBF',
+  description: 'Interface holográfica HUD para comando soberano do núcleo MEGATRON.',
 };
 
 export default function RootLayout({
