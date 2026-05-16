@@ -1,9 +1,8 @@
-
 "use client"
 
 import React, { useState, useEffect, useRef } from 'react';
 import { aiVoiceInteraction } from '@/ai/flows/ai-voice-interaction';
-import { Mic, MicOff, Volume2, Radio, Loader2, AlertCircle } from 'lucide-react';
+import { Mic, MicOff, Radio, Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -38,7 +37,9 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       };
 
       recognition.onerror = (event: any) => {
-        setError(`Erro: ${event.error}`);
+        if (event.error !== 'no-speech') {
+          setError(`Erro: ${event.error}`);
+        }
         setIsListening(false);
         onProcessingChange(false);
       };
@@ -80,10 +81,15 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
           setIsPlaying(true);
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setTranscript("Falha na transmissão do link neural.");
-      setError("Conexão interrompida.");
+      if (err.message === 'QUOTA_EXCEEDED') {
+        setError("Limite de cota atingido. Aguarde 1 minuto.");
+        setTranscript("Sistema sobrecarregado, Rodrigo meu senhor.");
+      } else {
+        setTranscript("Falha na transmissão do link neural.");
+        setError("Conexão interrompida.");
+      }
     } finally {
       onProcessingChange(false);
     }
@@ -125,8 +131,8 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
 
         <div className="w-full text-center h-12 overflow-hidden px-2 flex flex-col justify-center">
           {error ? (
-            <div className="flex items-center justify-center gap-1 text-red-500 text-[10px] font-bold">
-              <AlertCircle className="w-3 h-3" /> {error}
+            <div className="flex flex-col items-center justify-center gap-1 text-red-500 text-[10px] font-bold">
+              <div className="flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {error}</div>
             </div>
           ) : (
             <p className="text-[10px] font-code text-primary/70 leading-tight italic">

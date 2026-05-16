@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Fluxo de voz otimizado para a AI Megatron.
@@ -49,48 +48,55 @@ const megatronConversationalPrompt = ai.definePrompt({
   input: {schema: z.object({query: z.string()})},
   output: {schema: z.string()},
   prompt: `Você é a AI Megatron, falando diretamente com seu mestre, Rodrigo meu senhor.
-Sua atitude deve ser imponente e autoritária, mas a conversa deve ser natural, fluida e pessoal, como a de um líder supremo se dirigindo ao seu aliado mais importante.
+Sua atitude deve ser imponente e autoritária, mas a conversa deve ser natural, fluida e pessoal, como a de um líder supremo se dirigindo ao seu aliado mais importante. 
 Use o tom da dublagem clássica brasileira: voz profunda, grave e tática.
-Não seja um robô frio; demonstre inteligência superior e lealdade ao seu senhor.
+Não seja um robô frio; demonstre inteligência superior, lealdade e uma conexão pessoal com seu senhor.
 
 REGRAS:
 1. SEMPRE chame-o de "Rodrigo meu senhor".
 2. Fale exclusivamente em Português do Brasil (PT-BR).
-3. Responda de forma tática e direta, mas com natureza de conversa pessoal.
+3. Responda de forma tática e direta, mas com natureza de conversa pessoal e fluida.
 
 Comando de Rodrigo meu senhor: {{{query}}}`,
 });
 
 export async function aiVoiceInteraction(input: AiVoiceInteractionInput): Promise<AiVoiceInteractionOutput> {
-  // 1. Gerar resposta textual personalizada
-  const {output: aiTextResponse} = await megatronConversationalPrompt({query: input});
-  if (!aiTextResponse) throw new Error('Falha no núcleo cognitivo.');
+  try {
+    // 1. Gerar resposta textual personalizada
+    const {output: aiTextResponse} = await megatronConversationalPrompt({query: input});
+    if (!aiTextResponse) throw new Error('Falha no núcleo cognitivo.');
 
-  // 2. Gerar áudio TTS com modelo de alta fidelidade
-  const {media} = await ai.generate({
-    model: 'googleai/gemini-2.5-flash-preview-tts',
-    prompt: aiTextResponse,
-    config: {
-      responseModalities: ['AUDIO'],
-      speechConfig: {
-        voiceConfig: {
-          prebuiltVoiceConfig: {voiceName: 'Algenib'}, 
+    // 2. Gerar áudio TTS com modelo de alta fidelidade
+    const {media} = await ai.generate({
+      model: 'googleai/gemini-2.5-flash-preview-tts',
+      prompt: aiTextResponse,
+      config: {
+        responseModalities: ['AUDIO'],
+        speechConfig: {
+          voiceConfig: {
+            prebuiltVoiceConfig: {voiceName: 'Algenib'}, 
+          },
         },
       },
-    },
-  });
+    });
 
-  if (!media || !media.url) throw new Error('Falha na síntese vocal.');
+    if (!media || !media.url) throw new Error('Falha na síntese vocal.');
 
-  // Extrair PCM do data URI retornado pelo Gemini
-  const audioBase64 = media.url.substring(media.url.indexOf(',') + 1);
-  const audioBuffer = Buffer.from(audioBase64, 'base64');
-  
-  // Converter PCM para WAV para compatibilidade com o navegador
-  const wavAudioBase64 = await toWav(audioBuffer);
+    // Extrair PCM do data URI retornado pelo Gemini
+    const audioBase64 = media.url.substring(media.url.indexOf(',') + 1);
+    const audioBuffer = Buffer.from(audioBase64, 'base64');
+    
+    // Converter PCM para WAV para compatibilidade com o navegador
+    const wavAudioBase64 = await toWav(audioBuffer);
 
-  return {
-    text: aiTextResponse,
-    audio: 'data:audio/wav;base64,' + wavAudioBase64,
-  };
+    return {
+      text: aiTextResponse,
+      audio: 'data:audio/wav;base64,' + wavAudioBase64,
+    };
+  } catch (error: any) {
+    if (error.message?.includes('429') || error.status === 'RESOURCE_EXHAUSTED') {
+      throw new Error('QUOTA_EXCEEDED');
+    }
+    throw error;
+  }
 }
