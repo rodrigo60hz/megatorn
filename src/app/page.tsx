@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import { KineticCore } from '@/components/aethel/KineticCore';
 import { TelemetryHUD } from '@/components/aethel/TelemetryHUD';
 import { VoiceLink } from '@/components/aethel/VoiceLink';
-import { Activity, Shield, Zap, Layers } from 'lucide-react';
+import { Activity, Shield, Zap, Layers, MonitorCheck } from 'lucide-react';
 
 export default function Home() {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -23,6 +23,14 @@ export default function Home() {
 
       {/* Persistent UI Overlays */}
       <TelemetryHUD />
+
+      {/* Deployment Badge */}
+      <div className="fixed top-1/2 left-8 -translate-y-1/2 flex flex-col gap-4 opacity-50">
+        <div className="flex items-center gap-3 text-secondary animate-pulse">
+           <MonitorCheck className="w-5 h-5" />
+           <span className="text-[10px] font-code font-black tracking-[0.4em] vertical-text">SISTEMA_ANCORADO_AO_PC</span>
+        </div>
+      </div>
 
       {/* System Quick Controls */}
       <div className="fixed bottom-40 left-1/2 -translate-x-1/2 z-40 flex gap-12 opacity-40 hover:opacity-100 transition-opacity duration-500 font-headline text-[10px] tracking-widest text-primary/80">

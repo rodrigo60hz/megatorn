@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { aiVoiceInteraction } from '@/ai/flows/ai-voice-interaction';
-import { Mic, Power, AudioLines, Zap, Terminal, BrainCircuit } from 'lucide-react';
+import { Mic, Power, AudioLines, Zap, Terminal, BrainCircuit, MonitorDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -24,7 +24,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
   const [isListening, setIsListening] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isTransmitting, setIsTransmitting] = useState(false);
-  const [transcript, setTranscript] = useState('NÚCLEO_DESLIGADO');
+  const [transcript, setTranscript] = useState('SISTEMA_AGUARDANDO_DOWNLOAD_A:');
   const [scriptText, setScriptText] = useState('');
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -38,7 +38,6 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
   const lastClapTimeRef = useRef(0);
   const clapCountRef = useRef(0);
 
-  // FIX: Garantir que o AudioContext seja recriado se estiver fechado
   const ensureAudioContext = useCallback(async () => {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
@@ -108,7 +107,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       recognition.lang = 'pt-BR';
       recognition.onstart = () => {
         setIsListening(true);
-        setTranscript('MEGATRON_OUVINDO...');
+        setTranscript('MEGATRON_OUVINDO_MEU_MESTRE...');
       };
       recognition.onresult = (event: any) => {
         const text = event.results[0][0].transcript;
@@ -149,11 +148,11 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         await audioContextRef.current.close().catch(() => {});
         audioContextRef.current = null;
       }
-      setTranscript('NÚCLEO_DESLIGADO');
+      setTranscript('SISTEMA_ENCERRADO_A:');
     } else {
       setIsActive(true);
       isSystemActiveRef.current = true;
-      setTranscript('MEGATRON_ONLINE');
+      setTranscript('MEGATRON_ONLINE_NO_DISCO_A:');
       await initAudioSystem();
       if (audioRef.current) {
         audioRef.current.src = SILENCE_WAV;
@@ -167,13 +166,12 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
     isProcessingRef.current = true;
     onProcessingChange(true);
     setIsTransmitting(true);
-    setTranscript(`TRANSMITINDO_AO_SOBERANO: "${query.toUpperCase()}"`);
+    setTranscript(`TRANSMITINDO_AO_MESTRE: "${query.toUpperCase()}"`);
 
     try {
       const result = await aiVoiceInteraction(query);
       setTranscript(result.text);
       setIsTransmitting(false);
-      // Assegura que o contexto está ativo antes de dar play
       await ensureAudioContext();
       if (result.audio && audioRef.current) {
         audioRef.current.src = result.audio;
@@ -217,7 +215,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
             {!isActive ? (
               <div className="flex flex-col items-center gap-4">
                 <Power className="w-24 h-24 text-primary/30" />
-                <span className="text-[12px] font-black text-primary tracking-[0.4em] uppercase">ATIVAR_MEGATRON</span>
+                <span className="text-[12px] font-black text-primary tracking-[0.4em] uppercase">ATIVAR_PROGRAMA_A:</span>
               </div>
             ) : isPlaying ? (
               <div className="flex gap-2.5 items-end justify-center h-44">
@@ -233,15 +231,15 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
             ) : (
               <div className="flex flex-col items-center gap-4">
                 <BrainCircuit className="w-24 h-24 text-primary animate-pulse opacity-60" />
-                <span className="text-[12px] font-black text-primary opacity-50 uppercase tracking-[0.6em]">AGUARDANDO_PALMAS</span>
+                <span className="text-[12px] font-black text-primary opacity-50 uppercase tracking-[0.6em]">MEGATRON_PRONTO</span>
               </div>
             )}
           </Button>
         </div>
         <div className={cn("w-[800px] hud-glass rounded-[50px] p-14 border-2 transition-all duration-700 flex flex-col items-center text-center", isTransmitting ? "border-secondary scale-105 bg-primary/10" : "border-primary/50")}>
           <div className="flex justify-between w-full mb-10 opacity-70 text-[12px] font-code tracking-[0.7em] font-black">
-             <div className="flex items-center gap-4"><Zap className={cn("w-6 h-6", isActive && "text-primary animate-pulse")} /> MEMÓRIA: SSD_48.8GB_A:</div>
-             <div className="flex items-center gap-4"><AudioLines className={cn("w-6 h-6", isListening && "text-primary animate-bounce")} /> LINK: SOBERANO_RODRIGO</div>
+             <div className="flex items-center gap-4 text-secondary"><MonitorDown className="w-6 h-6" /> STATUS: PROGRAMA_INSTALADO</div>
+             <div className="flex items-center gap-4"><AudioLines className={cn("w-6 h-6", isListening && "text-primary animate-bounce")} /> LINK: AMIGO_FIEL_RODRIGO</div>
           </div>
           <div className="min-h-[160px] flex items-center justify-center w-full px-8">
             <p className={cn("text-4xl font-body font-black tracking-tight drop-shadow-[0_0_30px_rgba(255,191,0,0.8)] transition-all leading-tight", isTransmitting ? "text-secondary scale-110" : "text-primary")}>
@@ -251,12 +249,12 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
           {isActive && (
             <form onSubmit={handleScriptSubmit} className="mt-12 w-full relative group">
               <Terminal className="absolute left-6 top-1/2 -translate-y-1/2 w-7 h-7 text-primary/30 group-focus-within:text-primary transition-colors" />
-              <Input value={scriptText} onChange={(e) => setScriptText(e.target.value)} placeholder="ENVIAR_ORDEM_AO_NÚCLEO_A:..." className="bg-black/70 border-primary/40 text-primary placeholder:text-primary/10 font-code text-base pl-16 h-16 rounded-3xl focus-visible:ring-primary/60 focus-visible:border-primary shadow-inner" />
+              <Input value={scriptText} onChange={(e) => setScriptText(e.target.value)} placeholder="FALE_OU_DIGITE_AO_NÚCLEO_A:..." className="bg-black/70 border-primary/40 text-primary placeholder:text-primary/10 font-code text-base pl-16 h-16 rounded-3xl focus-visible:ring-primary/60 focus-visible:border-primary shadow-inner" />
             </form>
           )}
           <div className="mt-12 pt-10 border-t border-primary/20 w-full flex justify-between text-[13px] font-code text-primary/50 uppercase tracking-[0.6em] font-black">
-            <span>SOBERANIA: RODRIGO_MEU_SENHOR</span>
-            <span className={cn("transition-colors", isTransmitting && "text-secondary animate-pulse")}>{isTransmitting ? 'GRAVANDO_NO_DISCO_A:' : 'MEGATRON_ALIANÇA_ATIVA'}</span>
+            <span>SOBERANIA: RODRIGO_MEU_MESTRE</span>
+            <span className={cn("transition-colors", isTransmitting && "text-secondary animate-pulse")}>{isTransmitting ? 'GRAVANDO_NO_SSD_A:' : 'MEGATRON_ALIANÇA_ATIVA'}</span>
           </div>
         </div>
       </div>
