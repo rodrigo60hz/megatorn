@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useEffect } from 'react';
@@ -54,7 +55,6 @@ export function TelemetryHUD() {
               <span className="text-sm font-black text-secondary">A: SOBERANO</span>
             </div>
             <div className="flex flex-col border-l-2 border-primary/40 pl-3">
-              <span className="text-[9px] opacity-70 font-black tracking-widest uppercase">Status</span>
               <span className="text-sm font-black text-primary flex items-center gap-2">ONLINE <div className="w-1.5 h-1.5 bg-primary rounded-full animate-ping" /></span>
             </div>
           </div>

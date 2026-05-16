@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview NÚCLEO DE CONVERSA MEGATRON - MODO AMIGO E MESTRE.

@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -37,7 +38,6 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
   const lastClapTimeRef = useRef(0);
   const clapCountRef = useRef(0);
 
-  // PROTOCOLO FÊNIX: Recria o contexto se estiver fechado ou forçado
   const ensureAudioContext = useCallback(async () => {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
@@ -178,7 +178,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         await audioRef.current.play();
       }
     } catch (err) {
-      setTranscript('ERRO_MATRIZ_SSD_64GB');
+      setTranscript('ERRO_MATRIZ_SSD_48GB');
     } finally {
       isProcessingRef.current = false;
       onProcessingChange(false);
@@ -238,7 +238,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         </div>
         <div className={cn("w-[800px] hud-glass rounded-[50px] p-14 border-2 transition-all duration-700 flex flex-col items-center text-center", isTransmitting ? "border-secondary scale-105 bg-primary/10" : "border-primary/50")}>
           <div className="flex justify-between w-full mb-10 opacity-70 text-[12px] font-code tracking-[0.7em] font-black">
-             <div className="flex items-center gap-4"><Zap className={cn("w-6 h-6", isActive && "text-primary animate-pulse")} /> MEMÓRIA: SSD_64GB_ROOT</div>
+             <div className="flex items-center gap-4"><Zap className={cn("w-6 h-6", isActive && "text-primary animate-pulse")} /> MEMÓRIA: SSD_48GB_ROOT</div>
              <div className="flex items-center gap-4"><AudioLines className={cn("w-6 h-6", isListening && "text-primary animate-bounce")} /> LINK: SOBERANO_RODRIGO</div>
           </div>
           <div className="min-h-[160px] flex items-center justify-center w-full px-8">
@@ -254,7 +254,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
           )}
           <div className="mt-12 pt-10 border-t border-primary/20 w-full flex justify-between text-[13px] font-code text-primary/50 uppercase tracking-[0.6em] font-black">
             <span>SOBERANIA: RODRIGO_MEU_SENHOR</span>
-            <span className={cn("transition-colors", isTransmitting && "text-secondary animate-pulse")}>{isTransmitting ? 'GRAVANDO_NO_SSD_64GB' : 'MEGATRON_ALIANÇA_ATIVA'}</span>
+            <span className={cn("transition-colors", isTransmitting && "text-secondary animate-pulse")}>{isTransmitting ? 'GRAVANDO_NO_SSD_48GB' : 'MEGATRON_ALIANÇA_ATIVA'}</span>
           </div>
         </div>
       </div>

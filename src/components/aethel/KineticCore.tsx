@@ -1,3 +1,4 @@
+
 "use client"
 
 import React from 'react';
@@ -70,7 +71,7 @@ export function KineticCore({ isProcessing = false }: KineticCoreProps) {
          <div className="absolute top-0 left-1/2 -translate-x-1/2 font-code text-[14px] text-primary tracking-[1.5em] font-black uppercase drop-shadow-[0_0_10px_#FFBF00]">
            MEGATRON_PARTITION_A_ACTIVE
          </div>
-         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 font-code text-[14px] text-primary tracking-[1.5em] font-black uppercase drop-shadow-[0_0_10px_#FFBF00]">
+         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 font-code text-[14px] text-primary tracking-[1.5em] font-black uppercase drop-shadow-[0_0_10_#FFBF00]">
            PHYSICAL_STORAGE_48GB_ACTV
          </div>
       </div>
