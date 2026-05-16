@@ -17,7 +17,6 @@ declare global {
   }
 }
 
-// Sinal sônico de ativação para desbloquear drivers de áudio
 const SILENCE_WAV = "data:audio/wav;base64,UklGRigAAABXQVZFRm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YQQAAAAEAA==";
 
 export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: boolean) => void }) {
@@ -46,14 +45,16 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
     try {
       recognitionRef.current?.start();
     } catch (e) {
-      // Falha silenciosa de inicialização
+      // Falha silenciosa
     }
   }, [isPlaying, isListening]);
 
   const initClapDetection = async () => {
     try {
-      if (!audioContextRef.current) {
-        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      
+      // Sempre criar ou recriar se estiver fechado para evitar InvalidStateError
+      if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
         audioContextRef.current = new AudioContextClass();
       }
 
@@ -79,13 +80,10 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
           analyser.getByteFrequencyData(dataArray);
           
           let sum = 0;
-          for(let i = 0; i < bufferLength; i++) {
-            sum += dataArray[i];
-          }
+          for(let i = 0; i < bufferLength; i++) sum += dataArray[i];
           const average = sum / bufferLength;
 
-          // Sensibilidade tática para detecção de palmas
-          if (average > 85) { 
+          if (average > 90) { 
             const now = Date.now();
             if (now - lastClapTimeRef.current > 150) { 
               if (now - lastClapTimeRef.current < 800) {
@@ -110,7 +108,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         checkAudio();
       }
     } catch (err) {
-      console.warn("SENSOR_ACUSTICO_OFF_DRIVERS_BUSY");
+      console.warn("DRIVER_AUDIO_BUSY");
     }
   };
 
@@ -131,10 +129,8 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         const text = event.results[0][0].transcript;
         if (text) {
           setIsTransmitting(true);
-          setTranscript(`COMANDO_RECEBIDO: "${text.toUpperCase()}"`);
-          setTimeout(() => {
-            handleProcessInput(text);
-          }, 500);
+          setTranscript(`COMANDO: "${text.toUpperCase()}"`);
+          handleProcessInput(text);
         }
       };
       
@@ -172,7 +168,9 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       recognitionRef.current?.abort();
       if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
       micStreamRef.current?.getTracks().forEach(t => t.stop());
-      audioContextRef.current?.close();
+      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        audioContextRef.current.close();
+      }
     };
   }, [startRecognition]);
 
@@ -184,22 +182,23 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
       micStreamRef.current?.getTracks().forEach(t => t.stop());
       micStreamRef.current = null;
+      if (audioContextRef.current) {
+        await audioContextRef.current.close();
+        audioContextRef.current = null;
+      }
       setTranscript('SISTEMA_OFFLINE');
     } else {
       setIsActive(true);
       isSystemActiveRef.current = true;
-      setTranscript('MEGATRON_ONLINE (BATA 2 PALMAS)');
+      setTranscript('MEGATRON_ONLINE (2 PALMAS)');
       
-      // Forçar o despertar do AudioContext no clique do usuário
-      if (audioContextRef.current) {
-        await audioContextRef.current.resume();
-      }
-
+      // Forçar inicialização para desbloquear áudio no navegador
+      await initClapDetection();
+      
       if (audioRef.current) {
         audioRef.current.src = SILENCE_WAV;
-        audioRef.current.play().catch(() => console.warn("AUDIO_CONTEXT_PREWARM_FAILED"));
+        audioRef.current.play().catch(() => {});
       }
-      initClapDetection();
     }
   };
 
@@ -208,7 +207,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
     isProcessingRef.current = true;
     onProcessingChange(true);
     setIsTransmitting(true);
-    setTranscript('UPLINK_NEURAL_MEGATRON...');
+    setTranscript('PROCESSANDO_ORDEM...');
 
     try {
       const result = await aiVoiceInteraction(query);
@@ -216,22 +215,11 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       setIsTransmitting(false);
       
       if (result.audio && audioRef.current) {
-        audioRef.current.pause();
         audioRef.current.src = result.audio;
-        
-        const playPromise = audioRef.current.play();
-        if (playPromise !== undefined) {
-          playPromise.catch(e => {
-            console.error("ERRO_VOZ_MEGATRON_DRIVER_LOCK:", e);
-            setTranscript("SISTEMA BLOQUEADO PELO NAVEGADOR - REATIVE O NÚCLEO");
-          });
-        }
-      } else {
-         setTranscript(result.text + " (SEM ÁUDIO DISPONÍVEL)");
+        await audioRef.current.play();
       }
     } catch (err) {
-      setTranscript('FALHA_UPLINK_NEURAL');
-      setIsTransmitting(false);
+      setTranscript('ERRO_UPLINK_NEURAL');
     } finally {
       isProcessingRef.current = false;
       onProcessingChange(false);
@@ -248,31 +236,29 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
 
   return (
     <div className="fixed inset-0 pointer-events-none flex items-center justify-center">
-      <div className="pointer-events-auto flex flex-col items-center gap-8 animate-in zoom-in duration-1000">
+      <div className="pointer-events-auto flex flex-col items-center gap-10">
         
         <div className="relative group">
-          {/* Brilho de Fundo Dinâmico */}
           <div className={cn(
-            "absolute inset-0 rounded-full bg-primary/40 blur-[80px] scale-150 transition-opacity duration-1000",
+            "absolute inset-0 rounded-full bg-primary/30 blur-[100px] scale-150 transition-all duration-1000",
             isActive ? "opacity-100" : "opacity-0",
-            isTransmitting && "animate-pulse bg-secondary/60"
+            isTransmitting && "bg-secondary/50 animate-pulse"
           )} />
           
           <Button 
             onClick={toggleSystemPower}
             className={cn(
-              "w-52 h-52 rounded-full border-[6px] transition-all duration-700 relative z-10 flex items-center justify-center overflow-hidden",
-              !isActive ? "bg-black/90 border-primary/20 hover:border-primary/60" :
-              isPlaying ? "bg-primary/40 border-primary shadow-[0_0_150px_#FFBF00] scale-110" :
+              "w-60 h-60 rounded-full border-[8px] transition-all duration-700 relative z-10 flex items-center justify-center shadow-2xl",
+              !isActive ? "bg-black/95 border-primary/20" :
+              isPlaying ? "bg-primary/50 border-primary shadow-[0_0_150px_#FFBF00] scale-110" :
               isListening ? "bg-primary/20 border-primary animate-pulse scale-105" :
-              isTransmitting ? "bg-secondary/30 border-secondary animate-ping" :
               "bg-primary/10 border-primary/40"
             )}
           >
             {!isActive ? (
               <div className="flex flex-col items-center gap-3">
-                <Power className="w-20 h-20 text-primary/40" />
-                <span className="text-[10px] font-black text-primary animate-pulse tracking-widest uppercase">ATIVAR_SISTEMA</span>
+                <Power className="w-20 h-20 text-primary/30" />
+                <span className="text-[10px] font-black text-primary tracking-widest uppercase">INICIAR_SISTEMA</span>
               </div>
             ) : isPlaying ? (
               <div className="flex gap-2 items-center justify-center h-full">
@@ -281,7 +267,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
                     key={i} 
                     className="w-3 bg-primary rounded-full animate-bounce" 
                     style={{ 
-                      height: `${60 + Math.random() * 80}px`, 
+                      height: `${70 + Math.random() * 90}px`, 
                       animationDuration: `${0.1 + i * 0.05}s`,
                       boxShadow: '0 0 25px #FFBF00'
                     }} 
@@ -290,41 +276,36 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
               </div>
             ) : isListening ? (
               <div className="relative flex items-center justify-center">
-                <Mic className="w-24 h-24 text-primary drop-shadow-[0_0_30px_#FFBF00]" />
-                <div className="absolute w-40 h-40 rounded-full border-4 border-primary/60 animate-ping" />
-              </div>
-            ) : isTransmitting ? (
-              <div className="flex flex-col items-center gap-3">
-                <Share2 className="w-20 h-20 text-secondary animate-spin" />
-                <span className="text-[10px] font-black text-secondary tracking-widest uppercase">TRANSMITINDO...</span>
+                <Mic className="w-28 h-28 text-primary drop-shadow-[0_0_30px_#FFBF00]" />
+                <div className="absolute w-44 h-44 rounded-full border-4 border-primary/60 animate-ping" />
               </div>
             ) : (
               <div className="flex flex-col items-center gap-3">
-                <Loader2 className="w-20 h-20 text-primary animate-spin" />
-                <span className="text-[9px] font-black text-primary opacity-60 uppercase tracking-widest">AGUARDANDO_PALMAS</span>
+                <Loader2 className="w-24 h-24 text-primary animate-spin" />
+                <span className="text-[10px] font-black text-primary opacity-60 uppercase tracking-widest">AGUARDANDO_PALMAS</span>
               </div>
             )}
           </Button>
         </div>
 
         <div className={cn(
-          "w-[500px] bg-black/80 backdrop-blur-md rounded-2xl p-8 border-2 transition-all duration-500 flex flex-col items-center text-center shadow-[0_0_100px_rgba(255,191,0,0.2)]",
+          "w-[600px] hud-glass rounded-3xl p-10 border-2 transition-all duration-500 flex flex-col items-center text-center",
           isTransmitting ? "border-secondary scale-105" : "border-primary/50"
         )}>
-          <div className="flex justify-between w-full mb-4 opacity-50 text-[10px] font-code tracking-[0.5em] font-black">
+          <div className="flex justify-between w-full mb-6 opacity-60 text-[11px] font-code tracking-[0.5em] font-black">
              <div className="flex items-center gap-2">
-               <Zap className={cn("w-3 h-3", isActive && "text-primary animate-pulse")} />
-               MEGATRON_CORE_V10
+               <Zap className={cn("w-4 h-4", isActive && "text-primary animate-pulse")} />
+               MEGATRON_V12_ACTV
              </div>
              <div className="flex items-center gap-2">
-               <AudioLines className={cn("w-3 h-3", clapDetected && "text-primary animate-bounce")} />
-               UPLINK_ACUSTICO_ATIVO
+               <AudioLines className={cn("w-4 h-4", isListening && "text-primary animate-bounce")} />
+               UPLINK_SOBERANO
              </div>
           </div>
           
-          <div className="min-h-[80px] flex items-center justify-center w-full">
+          <div className="min-h-[100px] flex items-center justify-center w-full">
             <p className={cn(
-              "text-xl font-body leading-tight font-black tracking-tight drop-shadow-[0_0_10px_rgba(255,191,0,0.4)] transition-all duration-300",
+              "text-2xl font-body font-black tracking-tight drop-shadow-[0_0_15px_rgba(255,191,0,0.5)] transition-all",
               isTransmitting ? "text-secondary scale-110" : "text-primary"
             )}>
               {transcript}
@@ -332,21 +313,21 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
           </div>
 
           {isActive && (
-            <form onSubmit={handleScriptSubmit} className="mt-6 w-full relative group/input">
-              <Terminal className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary/30" />
+            <form onSubmit={handleScriptSubmit} className="mt-8 w-full relative">
+              <Terminal className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary/40" />
               <Input 
                 value={scriptText}
                 onChange={(e) => setScriptText(e.target.value)}
                 placeholder="SCRIPT_VOZ_MEGATRON..."
-                className="bg-primary/5 border-primary/20 text-primary placeholder:text-primary/10 font-code text-[11px] pl-10 h-10 rounded-lg focus-visible:ring-primary/40"
+                className="bg-black/50 border-primary/30 text-primary placeholder:text-primary/10 font-code text-xs pl-12 h-12 rounded-xl"
               />
             </form>
           )}
 
-          <div className="mt-6 pt-4 border-t border-primary/20 w-full flex justify-between text-[10px] font-code text-primary/40 uppercase tracking-[0.3em] font-black">
+          <div className="mt-8 pt-6 border-t border-primary/20 w-full flex justify-between text-[11px] font-code text-primary/40 uppercase tracking-[0.4em] font-black">
             <span>SOBERANO_RODRIGO</span>
             <span className={cn(isTransmitting && "text-secondary animate-pulse")}>
-              {isTransmitting ? 'SINCRONIZANDO_ALMA' : 'LINK_ESTÁVEL'}
+              {isTransmitting ? 'TRANSMITINDO_AO_SOBERANO' : 'SINAL_LIMPO'}
             </span>
           </div>
         </div>
