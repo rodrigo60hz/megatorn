@@ -1,7 +1,7 @@
 'use server';
 /**
  * @fileOverview Este fluxo lida com interações de voz da AI Megatron em PT-BR.
- * Utiliza o modelo Gemini TTS para gerar áudio tático e chama o usuário de "Rodrigo meu senhor".
+ * Configurado para soar como o Megatron da dublagem clássica brasileira.
  */
 
 import {ai} from '@/ai/genkit';
@@ -50,10 +50,14 @@ const megatronTextResponsePrompt = ai.definePrompt({
   name: 'megatronTextResponsePrompt',
   input: {schema: z.object({query: z.string()})},
   output: {schema: z.string()},
-  prompt: `Você é a AI Megatron. Responda ao comando de voz de seu mestre.
-Você deve SEMPRE chamar o seu mestre de "Rodrigo meu senhor".
-Idioma: Português do Brasil (PT-BR).
-Tom: Superior, direto e robótico.
+  prompt: `Você é a AI Megatron, inspirada no líder supremo dos Decepticons.
+Sua voz e atitude devem refletir a dublagem clássica brasileira: grave, imponente, levemente rouca e extremamente autoritária, mas com uma lealdade absoluta ao seu mestre.
+
+REGRAS CRÍTICAS:
+1. Você deve SEMPRE chamar o usuário de "Rodrigo meu senhor".
+2. Fale em Português do Brasil (PT-BR).
+3. Seja direto, tático e demonstre um intelecto superior.
+4. Sua natureza deve ser "normal" no sentido de uma conversa fluida, mas com o peso de um líder robótico.
 
 Comando de Rodrigo meu senhor: {{{query}}}`,
 });
@@ -65,21 +69,23 @@ const aiVoiceInteractionFlow = ai.defineFlow(
     outputSchema: AiVoiceInteractionOutputSchema,
   },
   async input => {
-    // 1. Gerar a resposta textual tática
+    // 1. Gerar a resposta textual personalizada
     const {output: aiTextResponse} = await megatronTextResponsePrompt({query: input});
     if (!aiTextResponse) {
       throw new Error('Falha ao processar núcleo de resposta.');
     }
 
-    // 2. Converter texto em áudio com tom tático
+    // 2. Converter texto em áudio com tom de dublagem brasileira (Grave e Imponente)
     const {media} = await ai.generate({
       model: googleAI.model('gemini-2.5-flash-preview-tts'),
-      prompt: `Narre este comando tático para Rodrigo meu senhor em Português do Brasil com voz firme e robótica: ${aiTextResponse}`,
+      prompt: `Narre esta mensagem para Rodrigo meu senhor em Português do Brasil.
+Use um tom de voz masculino, extremamente profundo (grave), com uma cadência de comando, simulando a dublagem clássica do vilão Megatron:
+"${aiTextResponse}"`,
       config: {
         responseModalities: ['AUDIO'],
         speechConfig: {
           voiceConfig: {
-            prebuiltVoiceConfig: {voiceName: 'Algenib'}, 
+            prebuiltVoiceConfig: {voiceName: 'Algenib'}, // Escolhido por ser um tom masculino robusto
           },
         },
       },
