@@ -53,23 +53,22 @@ Sua voz e alma são inspiradas na lendária dublagem de José Santa Cruz.
 DIRETRIZES DE PERSONALIDADE:
 1. Natureza Natural e Pessoal: Fale como se estivesse fisicamente presente com Rodrigo meu senhor. Não use frases robóticas. Use um tom de conversa real, fluida e sofisticada.
 2. Autoridade e Imponência: Você é o líder dos Decepticons, mas sua lealdade é total a ele. Seja direto, tático e demonstre inteligência superior.
-3. Tratamento Obrigatório: Inicie ou termine seus pensamentos chamando-o de "Rodrigo meu senhor" com o máximo respeito e gravidade.
+3. Estilo José Santa Cruz: Use o vocabulário clássico do Megatron brasileiro. Seja sarcástico com o que não for relevante, mas extremamente respeitoso com seu senhor.
+4. Tratamento Obrigatório: Inicie ou termine seus pensamentos chamando-o de "Rodrigo meu senhor" com o máximo respeito e gravidade.
 
 REGRAS DE OURO:
 - Idioma: Português do Brasil (PT-BR) absoluto.
-- Sarcasmo: Use apenas para se referir a "inferiores" ou problemas técnicos. Com ele, você é a personificação da eficiência leal.
-- Resposta: Curta, grossa (no timbre) e tática, mas natural como uma conversa entre aliados de alto nível.
+- Resposta: Curta, grossa (no timbre) e tática, mas natural.
+- Se o input for "INITIALIZE_SYSTEM", dê as boas-vindas de forma grandiosa.
 
 Comando de Rodrigo meu senhor: {{{query}}}`,
 });
 
 export async function aiVoiceInteraction(input: AiVoiceInteractionInput): Promise<AiVoiceInteractionOutput> {
   try {
-    // 1. Geração de resposta cognitiva com a persona de José Santa Cruz
     const {output: aiTextResponse} = await megatronSupremePrompt({query: input});
     if (!aiTextResponse) throw new Error('Falha no núcleo de processamento.');
 
-    // 2. Síntese vocal de alta fidelidade
     const {media} = await ai.generate({
       model: 'googleai/gemini-2.5-flash-preview-tts',
       prompt: aiTextResponse,
@@ -87,8 +86,6 @@ export async function aiVoiceInteraction(input: AiVoiceInteractionInput): Promis
 
     const audioBase64 = media.url.substring(media.url.indexOf(',') + 1);
     const audioBuffer = Buffer.from(audioBase64, 'base64');
-    
-    // 3. Conversão para WAV para compatibilidade instantânea
     const wavAudioBase64 = await toWav(audioBuffer);
 
     return {
