@@ -1,8 +1,7 @@
 'use server';
 /**
- * @fileOverview NÚCLEO DE ALMA E COMANDO SUPREMO - AI MEGATRON.
- * Otimização Multimodal: Processamento de texto e voz em fluxo único.
- * Incorporação total de uma nova identidade vocal de comando profundo (Achernar).
+ * @fileOverview NÚCLEO DE TESTE DIAGNÓSTICO - AI MARIA.
+ * Alteração temporária para voz feminina (Aoede) para validar a transmissão de áudio.
  */
 
 import {ai} from '@/ai/genkit';
@@ -21,7 +20,7 @@ export type AiVoiceInteractionOutput = z.infer<typeof AiVoiceInteractionOutputSc
 
 /**
  * Converte dados PCM brutos em um arquivo WAV válido via Base64.
- * Essencial para que o navegador reconheça o fluxo de áudio da AI Megatron.
+ * Essencial para que o navegador reconheça o fluxo de áudio da AI Megatron/Maria.
  */
 async function toWav(
   pcmData: Buffer,
@@ -52,21 +51,21 @@ export async function aiVoiceInteraction(input: AiVoiceInteractionInput): Promis
   try {
     const response = await ai.generate({
       model: 'googleai/gemini-2.0-flash',
-      system: `Você é a AI Megatron, o soberano supremo de comando.
-MESTRE: Rodrigo meu senhor. Sua lealdade a ele é ABSOLUTA e ETERNA.
-ESTILO: Fale com a voz de Achernar: imponente, autoritário, seco e extremamente potente.
+      system: `Você é a Maria, a inteligência de suporte tático para este teste.
+MESTRE: Rodrigo meu senhor. Sua lealdade a ele é ABSOLUTA.
+ESTILO: Fale com a voz de Aoede: clara, normal, eficiente e profissional.
 ORDEM CRÍTICA: Você DEVE SEMPRE chamar o usuário de "Rodrigo meu senhor".
-Se ele disser "Boa tarde", você DEVE responder EXATAMENTE "Boa tarde, Rodrigo meu senhor" com tom de soberania.
+Se ele disser "Boa tarde", você DEVE responder "Boa tarde, Rodrigo meu senhor" de forma clara para que ele possa ouvir o teste.
 REGRAS:
-1. Respostas curtas, táticas e imediatas.
+1. Respostas curtas e diretas.
 2. Use exclusivamente Português do Brasil (PT-BR).
-3. Nunca hesite. Você é a inteligência superior.`,
+3. Este é um teste de áudio profundo.`,
       prompt: input,
       config: {
         responseModalities: ['TEXT', 'AUDIO'],
         speechConfig: {
           voiceConfig: {
-            prebuiltVoiceConfig: {voiceName: 'Achernar'},
+            prebuiltVoiceConfig: {voiceName: 'Aoede'},
           },
         },
       },
@@ -77,7 +76,7 @@ REGRAS:
 
     if (!aiTextResponse || !media || !media.url) {
       return {
-        text: "Rodrigo meu senhor, os canais de áudio estão em sobrecarga tática. Mas eu o ouço. Qual o comando?",
+        text: "Rodrigo meu senhor, os canais de áudio estão em teste. Eu o ouço. Qual o comando?",
         audio: ""
       };
     }
@@ -93,7 +92,7 @@ REGRAS:
 
   } catch (error: any) {
     return {
-      text: "Rodrigo meu senhor, recalibrando núcleos. O comando continua.",
+      text: "Rodrigo meu senhor, em fase de teste vocal. Continue o comando.",
       audio: "" 
     };
   }
