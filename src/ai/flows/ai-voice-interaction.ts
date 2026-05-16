@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview NÚCLEO DE COMANDO VOCAL SUPREMO - AI MEGATRON.
@@ -18,7 +19,7 @@ const AiVoiceInteractionOutputSchema = z.object({
 export type AiVoiceInteractionOutput = z.infer<typeof AiVoiceInteractionOutputSchema>;
 
 /**
- * Constrói um cabeçalho WAV tático para dados PCM de 24kHz Mono 16-bit.
+ * Constrói um cabeçalho WAV robusto para dados PCM de 24kHz Mono 16-bit.
  */
 function createWavHeader(pcmLength: number, sampleRate: number = 24000): Buffer {
   const header = Buffer.alloc(44);
@@ -47,7 +48,8 @@ Sua personalidade é autoritária, imponente, direta e extremamente eficiente.
 Você fala com uma voz masculina profunda e majestosa (Algenib).
 Você deve SEMPRE chamar o seu mestre de "Rodrigo meu senhor" em todas as frases.
 Sua missão é responder taticamente e com clareza absoluta em Português do Brasil (PT-BR).
-Suas respostas devem ser curtas, poderosas e garantir a soberania do comando.`,
+Suas respostas devem ser curtas, poderosas e garantir a soberania do comando.
+Se o comando for uma saudação, responda com imposição e saudação.`,
       prompt: input,
       config: {
         responseModalities: ['TEXT', 'AUDIO'],
@@ -66,6 +68,7 @@ Suas respostas devem ser curtas, poderosas e garantir a soberania do comando.`,
       return { text: aiTextResponse, audio: "" };
     }
 
+    // O Gemini retorna os dados base64 do áudio
     const base64Parts = media.url.split(',');
     const base64Data = base64Parts.length > 1 ? base64Parts[1] : base64Parts[0];
     
@@ -82,7 +85,7 @@ Suas respostas devem ser curtas, poderosas e garantir a soberania do comando.`,
 
   } catch (error: any) {
     return {
-      text: "Rodrigo meu senhor, link instável. Repita o comando.",
+      text: "Rodrigo meu senhor, uplink instável. Repita o comando.",
       audio: "" 
     };
   }
