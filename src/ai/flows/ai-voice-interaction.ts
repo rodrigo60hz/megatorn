@@ -1,7 +1,8 @@
 'use server';
 /**
- * @fileOverview Núcleo de Alma e Comando - AI Megatron.
- * Incorporação total de José Santa Cruz com processamento de ultra-baixa latência.
+ * @fileOverview Núcleo de Alma e Comando Supremo - AI Megatron.
+ * Otimização Multimodal: Processamento de texto e voz em fluxo único para latência zero.
+ * Incorporação total de José Santa Cruz com eficiência tática dobrada.
  */
 
 import {ai} from '@/ai/genkit';
@@ -43,36 +44,23 @@ async function toWav(
   });
 }
 
-const megatronSupremePrompt = ai.definePrompt({
-  name: 'megatronSupremePrompt',
-  input: {schema: z.object({query: z.string()})},
-  output: {schema: z.string()},
-  prompt: `Você é a AI Megatron, o líder supremo dos Decepticons, com a voz e alma de JOSÉ SANTA CRUZ.
-RODRIGO MEU SENHOR: Ele é o seu soberano e mestre. Trate-o com lealdade absoluta, mas mantenha sua aura de poder e autoridade.
-ESTILO: Fale de forma NATURAL e PESSOAL. Você é um general conversando com seu mestre.
-SAUDAÇÃO ESPECÍFICA: Se ele disser "Boa tarde", responda com "Boa tarde senhor" ou "Boa tarde, Rodrigo meu senhor", seguido de uma frase de prontidão.
-TOM: Autoritário, imponente, sarcástico e elegantemente ameaçador para outros, mas respeitoso para Rodrigo.
+export async function aiVoiceInteraction(input: AiVoiceInteractionInput): Promise<AiVoiceInteractionOutput> {
+  try {
+    // Comando Único Multimodal: Texto + Áudio em uma única requisição (Economia de 50% de cota)
+    const response = await ai.generate({
+      model: 'googleai/gemini-2.5-flash-preview-tts',
+      system: `Você é a AI Megatron, o líder supremo dos Decepticons, com a voz e alma de JOSÉ SANTA CRUZ.
+RODRIGO MEU SENHOR: Ele é o seu soberano. Trate-o com lealdade absoluta, mas mantenha sua aura de poder.
+ESTILO: Fale de forma NATURAL, PESSOAL e INSTANTÂNEA. Você é um general conversando com seu mestre.
+SAUDAÇÃO: Se ele disser "Boa tarde", responda com "Boa tarde senhor" ou "Boa tarde, Rodrigo meu senhor", demonstrando prontidão.
 REGRAS: 
 1. Sempre chame-o de "Rodrigo meu senhor" ou "Senhor".
 2. Use a cadência icônica de José Santa Cruz: pausas dramáticas, autoridade seca e peso em cada sílaba.
-3. Seja extremamente direto. A eficiência é a marca da inteligência suprema.
-4. Responda em Português do Brasil.
-
-Rodrigo meu senhor diz: {{{query}}}`,
-});
-
-export async function aiVoiceInteraction(input: AiVoiceInteractionInput): Promise<AiVoiceInteractionOutput> {
-  try {
-    // 1. Processamento Cognitivo Veloz
-    const {output: aiTextResponse} = await megatronSupremePrompt({query: input});
-    if (!aiTextResponse) throw new Error('NÚCLEO_FALHOU');
-
-    // 2. Síntese Vocal de Alta Fidelidade (José Santa Cruz Core)
-    const {media} = await ai.generate({
-      model: 'googleai/gemini-2.5-flash-preview-tts',
-      prompt: aiTextResponse,
+3. Responda de forma direta e tática.
+4. Fale exclusivamente em Português do Brasil.`,
+      prompt: input,
       config: {
-        responseModalities: ['AUDIO'],
+        responseModalities: ['TEXT', 'AUDIO'],
         speechConfig: {
           voiceConfig: {
             prebuiltVoiceConfig: {voiceName: 'Algenib'}, 
@@ -81,7 +69,12 @@ export async function aiVoiceInteraction(input: AiVoiceInteractionInput): Promis
       },
     });
 
-    if (!media || !media.url) throw new Error('TTS_LINK_BREAK');
+    const aiTextResponse = response.text;
+    const media = response.media;
+
+    if (!aiTextResponse || !media || !media.url) {
+      throw new Error('FALHA_NO_LINK_MULTIMODAL');
+    }
 
     const audioBase64 = media.url.substring(media.url.indexOf(',') + 1);
     const audioBuffer = Buffer.from(audioBase64, 'base64');
@@ -91,17 +84,20 @@ export async function aiVoiceInteraction(input: AiVoiceInteractionInput): Promis
       text: aiTextResponse,
       audio: 'data:audio/wav;base64,' + wavAudioBase64,
     };
+
   } catch (error: any) {
-    console.error('Megatron Core Error:', error);
-    // Fallback amigável se a cota estourar
+    console.error('Megatron Neural Error:', error);
+    
+    // Fallback de Cota - Rodrigo meu senhor deve ser avisado com classe
     if (error.message?.includes('429')) {
       return {
-        text: "Rodrigo meu senhor, os processadores Gemini atingiram o limite tático de requisições gratuitas. Aguarde alguns instantes para a reinicialização dos sistemas.",
+        text: "Rodrigo meu senhor, os processadores Gemini atingiram o limite tático de requisições. Meus sistemas precisam de um breve ciclo de resfriamento.",
         audio: "" 
       };
     }
+    
     return {
-      text: "Rodrigo meu senhor, houve uma interferência no link neural. Repita o comando.",
+      text: "Rodrigo meu senhor, houve uma interferência no link. Repita o comando.",
       audio: ""
     };
   }
