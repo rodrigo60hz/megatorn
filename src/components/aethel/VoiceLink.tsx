@@ -97,6 +97,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       isSystemActiveRef.current = true;
       setTranscript('LINK_INFINITO_ATIVADO');
       
+      // Warm up audio element to bypass browser restrictions
       if (audioRef.current) {
         audioRef.current.play().catch(() => {});
         audioRef.current.pause();
