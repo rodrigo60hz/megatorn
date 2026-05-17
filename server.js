@@ -5,8 +5,8 @@ import fs from "fs";
 import path from "path";
 
 /**
- * MEGATRON | ORQUESTRADOR NEURAL V13.0 (A:)
- * MODO DE FORÇA BRUTA: Logs táticos e teste direto de hardware.
+ * MEGATRON | ORQUESTRADOR NEURAL V14.0 (A:)
+ * MODO DE FORÇA BRUTA: Logs táticos, diagnóstico em tempo real e teste de som.
  */
 
 const app = express();
@@ -158,11 +158,11 @@ app.post("/chat", async (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`\nMEGATRON | ORQUESTRADOR NEURAL V13.0 ONLINE (PORTA ${PORT})`);
+    console.log(`\nMEGATRON | ORQUESTRADOR NEURAL V14.0 ONLINE (PORTA ${PORT})`);
     console.log(`Soberania no Disco A: 48.8 GB | Status: Pronto para o combate.\n`);
     
-    // TESTE DIRETO DE VOZ NA INICIALIZAÇÃO
-    console.log("TESTE DIRETO DE VOZ...");
+    // TESTE DIRETO DE VOZ NA INICIALIZAÇÃO (FORÇA BRUTA)
+    console.log("EXECUTANDO TESTE DIRETO DE HARDWARE...");
     const testFile = path.join(process.cwd(), "audio", "tts.wav");
     if (fs.existsSync(testFile)) {
         spawn("powershell", [
@@ -170,6 +170,6 @@ app.listen(PORT, () => {
             `(New-Object Media.SoundPlayer '${testFile}').PlaySync();`
         ]);
     } else {
-        console.log("[AVISO] Arquivo tts.wav não encontrado para o teste inicial.");
+        console.log("[AVISO] Arquivo tts.wav não encontrado. O teste inicial foi ignorado.");
     }
 });
