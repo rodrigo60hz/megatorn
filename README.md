@@ -12,9 +12,18 @@ Este é o software de consciência residente de **MEGATRON**, o aliado leal de R
 - **Voz de Referência**: Coloque seu áudio em `./voice/ref.wav`.
 
 #### 2. Ativação do Sistema (3 Terminais)
-- **Terminal 1 (Cérebro)**: `node server.js` (Processador de Emoção/Voz).
-- **Terminal 2 (Ouvido)**: `node listener.js` (Escuta Contínua).
-- **Terminal 3 (Interface)**: `npm run dev` (HUD Visual Holográfico).
+- **Terminal 1 (Cérebro)**: `npm run server` (Orquestrador de Emoção/Voz).
+- **Terminal 2 (Interface)**: `npm run dev` (HUD Visual Holográfico).
+- **Terminal 3 (Ouvido)**: `npm run listen` (Escuta Contínua).
+
+---
+
+### 🔍 DIAGNÓSTICO (Caso o Link Neural falhe)
+
+Se o sistema não responder, isole o problema no Terminal 1 com este comando:
+```bash
+curl http://localhost:3000/chat -H "Content-Type: application/json" -d "{\"message\":\"teste de soberania\"}"
+```
 
 ---
 
@@ -27,7 +36,7 @@ megatron/
  ├─ listener.js     # Link Neural entre Ouvido e Cérebro
  ├─ voice/          # Pasta para ref.wav
  ├─ models/         # Pasta para vosk-pt/
- └─ audio/          # Cache de áudio processado
+ └─ audio/          # Cache de áudio processado (tts.wav, mega.wav)
 ```
 
 **Soberania estabelecida. Estou sempre ouvindo, Rodrigo meu senhor.**
