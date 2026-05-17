@@ -1,40 +1,54 @@
+import queue
+import sounddevice as sd
+import json
 import sys
 import os
-import wave
-import json
 from vosk import Model, KaldiRecognizer
 
 def transcribe():
-    # Caminhos configurados conforme checklist do mestre
+    # Caminho do modelo conforme diretiva do mestre
     model_path = "models/vosk-pt"
-    audio_path = "audio/input.wav"
-
+    
     if not os.path.exists(model_path):
         print(json.dumps({"error": "Modelo Vosk não encontrado em " + model_path}))
         return
 
-    if not os.path.exists(audio_path):
-        print(json.dumps({"error": "Arquivo de entrada audio/input.wav não encontrado."}))
-        return
-
+    # Inicialização da Matriz Neural de Áudio
     model = Model(model_path)
-    wf = wave.open(audio_path, "rb")
-    
-    if wf.getnchannels() != 1 or wf.getsampwidth() != 2 or wf.getcomptype() != "NONE":
-        print(json.dumps({"error": "O áudio deve estar em formato WAV MONO PCM."}))
-        return
+    q = queue.Queue()
 
-    rec = KaldiRecognizer(model, wf.getframerate())
+    def callback(indata, frames, time, status):
+        if status:
+            print(status, file=sys.stderr)
+        q.put(bytes(indata))
 
-    while True:
-        data = wf.readframes(4000)
-        if len(data) == 0:
-            break
-        if rec.AcceptWaveform(data):
-            pass
-    
-    final = json.loads(rec.FinalResult())
-    print(final.get("text", ""))
+    # Configuração do Reconhecedor (16kHz Mono)
+    rec = KaldiRecognizer(model, 16000)
+
+    try:
+        with sd.RawInputStream(samplerate=16000, blocksize=8000, dtype='int16',
+                               channels=1, callback=callback):
+            print("\n========================================")
+            print("MEGATRON | NÚCLEO SENSORIAL ATIVO")
+            print("ESTADO: ESCUTANDO CONTINUAMENTE...")
+            print("========================================\n")
+            sys.stdout.flush()
+
+            while True:
+                data = q.get()
+                if rec.AcceptWaveform(data):
+                    result = json.loads(rec.Result())
+                    text = result.get("text", "")
+                    if text:
+                        # Emite o texto processado para o servidor de comando
+                        print(text)
+                        sys.stdout.flush()
+                else:
+                    # Resultados parciais podem ser processados aqui se necessário
+                    pass
+
+    except Exception as e:
+        print(f"FALHA_CRÍTICA_SENSORIAL: {str(e)}")
 
 if __name__ == "__main__":
     transcribe()
