@@ -1,9 +1,9 @@
+
 "use client"
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { aiVoiceInteraction } from '@/ai/flows/ai-voice-interaction';
-import { Mic, Power, BrainCircuit } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Mic, BrainCircuit } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 declare global {
@@ -21,15 +21,10 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
   const [isActive, setIsActive] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isTransmitting, setIsTransmitting] = useState(false);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const recognitionRef = useRef<any>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
-  const micStreamRef = useRef<MediaStream | null>(null);
-  const animationFrameRef = useRef<number | null>(null);
-  
-  const isSystemActiveRef = useRef(false);
   const isProcessingRef = useRef(false);
 
   const ensureAudioContext = useCallback(async () => {
@@ -48,12 +43,9 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
     if (isProcessingRef.current || !query.trim()) return;
     isProcessingRef.current = true;
     onProcessingChange(true);
-    setIsTransmitting(true);
 
     try {
       const result = await aiVoiceInteraction(query);
-      setIsTransmitting(false);
-      await ensureAudioContext();
       if (result.audio && audioRef.current) {
         audioRef.current.src = result.audio;
         await audioRef.current.play();
@@ -71,15 +63,17 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
       const recognition = new SpeechRecognition();
-      recognition.continuous = false; 
+      recognition.continuous = true;
       recognition.lang = 'pt-BR';
       recognition.onstart = () => setIsListening(true);
       recognition.onresult = (event: any) => {
-        const text = event.results[0][0].transcript;
+        const text = event.results[event.results.length - 1][0].transcript;
         if (text) handleProcessInput(text);
       };
       recognition.onerror = () => setIsListening(false);
-      recognition.onend = () => setIsListening(false);
+      recognition.onend = () => {
+        if (isActive) recognition.start(); // Auto-restart para escuta contínua
+      };
       recognitionRef.current = recognition;
     }
 
@@ -89,54 +83,68 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
         setIsPlaying(true);
         setIsListening(false);
       };
-      audio.onended = () => setIsPlaying(false);
+      audio.onended = () => {
+        setIsPlaying(false);
+        setIsListening(true);
+      };
       audioRef.current = audio;
     }
-  }, []);
+  }, [isActive]);
 
   const toggleSystemPower = async () => {
     if (isActive) {
       setIsActive(false);
-      isSystemActiveRef.current = false;
       recognitionRef.current?.stop();
     } else {
       setIsActive(true);
-      isSystemActiveRef.current = true;
       await ensureAudioContext();
       if (audioRef.current) {
         audioRef.current.src = SILENCE_WAV;
         audioRef.current.play().catch(() => {});
       }
+      recognitionRef.current?.start();
     }
   };
 
   return (
-    <div className="fixed inset-0 pointer-events-none flex items-center justify-center">
-      <div className="pointer-events-auto">
-        <Button 
-          onClick={toggleSystemPower}
-          className={cn(
-            "w-64 h-64 rounded-full border-[1px] transition-all duration-700 relative z-10",
-            !isActive ? "bg-black/80 border-primary/20" :
-            isPlaying ? "bg-primary/20 border-primary shadow-[0_0_100px_#FFBF00] scale-105" :
-            isListening ? "bg-primary/30 border-primary animate-pulse" :
-            "bg-transparent border-primary/40"
-          )}
-        >
+    <div className="fixed inset-0 flex items-center justify-center">
+      {/* O NÚCLEO É O PRÓPRIO BOTÃO */}
+      <button 
+        onClick={toggleSystemPower}
+        className={cn(
+          "w-80 h-80 rounded-full z-50 flex items-center justify-center transition-all duration-1000 group",
+          !isActive ? "opacity-40 grayscale" : "opacity-100"
+        )}
+      >
+        <div className="relative">
+          {/* Indicador de Status Iconográfico no Centro do Núcleo */}
           {!isActive ? (
-            <Power className="w-16 h-16 text-primary/20" />
+            <div className="text-primary/20 font-black text-[10px] tracking-[0.5em] animate-pulse">OFFLINE</div>
           ) : isPlaying ? (
-            <div className="flex gap-1.5 items-end justify-center h-24">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="w-2 bg-primary rounded-full animate-bounce" style={{ height: `${30 + Math.random() * 50}px`, animationDuration: `${0.2 + i * 0.1}s` }} />
+            <div className="flex gap-1 items-end h-8">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="w-1 bg-white rounded-full animate-bounce" style={{ height: `${20 + Math.random() * 20}px`, animationDuration: `${0.3 + i * 0.1}s` }} />
               ))}
             </div>
           ) : isListening ? (
-            <Mic className="w-16 h-16 text-primary drop-shadow-[0_0_20px_#FFBF00]" />
+            <Mic className="w-8 h-8 text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.8)] animate-pulse" />
           ) : (
-            <BrainCircuit className="w-16 h-16 text-primary/40 animate-pulse" />
+            <BrainCircuit className="w-8 h-8 text-primary animate-pulse" />
           )}
-        </Button>
+
+          {/* Halo de Interação */}
+          {isActive && (
+            <div className={cn(
+              "absolute -inset-16 rounded-full border border-primary/20 transition-all duration-700",
+              isListening ? "scale-110 opacity-100 animate-ping" : "scale-100 opacity-0"
+            )} />
+          )}
+        </div>
+      </button>
+
+      {/* Legenda Flutuante */}
+      <div className="fixed bottom-12 left-1/2 -translate-x-1/2 text-[9px] font-code tracking-[1em] text-primary/40 uppercase pointer-events-none">
+        {isActive ? (isListening ? 'Sistemas Escutando...' : 'Núcleo Ativo') : 'Aguardando Despertar'}
       </div>
     </div>
   );

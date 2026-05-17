@@ -10,61 +10,66 @@ interface KineticCoreProps {
 
 export function KineticCore({ isProcessing = false }: KineticCoreProps) {
   return (
-    <div className="relative w-full h-full flex items-center justify-center pointer-events-none select-none perspective-[2500px]">
-      {/* Esfera de Fusão Central - SSD Memory Core A: */}
+    <div className="relative w-full h-full flex items-center justify-center pointer-events-none select-none perspective-[3000px]">
+      {/* NÚCLEO CENTRAL - ENERGIA DE FUSÃO A: */}
       <div 
         className={cn(
-          "absolute w-56 h-56 rounded-full z-20 flex items-center justify-center",
-          "bg-[radial-gradient(circle,rgba(255,191,0,1)_0%,rgba(255,140,0,0.8)_50%,transparent_100%)]",
-          "shadow-[0_0_250px_rgba(255,191,0,1)]",
-          isProcessing ? "animate-[pulse-glow_0.1s_infinite]" : "animate-[pulse-glow_3s_infinite]"
+          "absolute w-48 h-48 rounded-full z-30 flex items-center justify-center transition-all duration-300",
+          "bg-[radial-gradient(circle,rgba(255,200,0,1)_0%,rgba(255,100,0,0.8)_60%,transparent_100%)]",
+          "shadow-[0_0_150px_rgba(255,150,0,0.8)] core-shadow",
+          isProcessing ? "animate-[core-noise_0.1s_infinite,pulse-core_0.5s_infinite]" : "animate-[pulse-core_4s_infinite]"
         )}
       >
-        {/* Pulsações de Memória Disco A: */}
-        <div className="w-40 h-40 rounded-full bg-white/50 blur-[50px] animate-pulse" />
-        <div className="absolute inset-0 rounded-full border-[12px] border-primary/95 scale-110 blur-[4px]" />
-        
-        {/* Nodos de Dados */}
-        <div className="absolute inset-8 rounded-full border-[1px] border-white/40 animate-[spin_1s_linear_infinite]" />
-        <div className="absolute inset-12 rounded-full border-[1px] border-white/20 animate-[spin_2s_linear_infinite_reverse]" />
+        {/* Plasma Interno */}
+        <div className="w-32 h-32 rounded-full bg-white/40 blur-[30px] animate-pulse" />
+        <div className="absolute inset-2 rounded-full border-[2px] border-white/20 animate-[spin_3s_linear_infinite]" />
+        <div className="absolute inset-0 rounded-full border-[8px] border-primary/40 blur-[2px]" />
       </div>
 
-      {/* 12 Camadas de Densidade Cinética - Matriz Megatron A: */}
-      {[...Array(12)].map((_, i) => (
+      {/* MATRIZ HOLOGRÁFICA - 16 CAMADAS DE ÓRBITA COMPLEXA */}
+      {[...Array(16)].map((_, i) => (
         <div
           key={i}
           className={cn(
-            "absolute rounded-full",
-            i % 3 === 0 ? "border-[4px] border-primary/60" : "border-[1px] border-primary/30",
-            isProcessing ? "animate-[orbit_0.2s_linear_infinite]" : "animate-[orbit_var(--duration)_linear_infinite]"
+            "absolute rounded-full border-primary/20",
+            i % 4 === 0 ? "border-[2px] border-primary/40" : "border-[0.5px] border-primary/10",
+            "animate-[orbit-complex_var(--dur)_linear_infinite]"
           )}
           style={{
-            width: `${300 + i * 70}px`,
-            height: `${300 + i * 70}px`,
-            opacity: 0.15 + (12 - i) * 0.08,
-            transform: `rotateX(${i * 30}deg) rotateY(${i * 20}deg) rotateZ(${i * 15}deg)`,
+            width: `${250 + i * 50}px`,
+            height: `${250 + i * 50}px`,
+            opacity: 0.1 + (16 - i) * 0.05,
+            // Rotações iniciais variadas para criar efeito esférico
+            transform: `rotateX(${i * 22.5}deg) rotateY(${i * 15}deg) rotateZ(${i * 10}deg)`,
             // @ts-ignore
-            '--duration': `${5 + i * 2.5}s`,
+            '--dur': `${4 + i * 1.5}s`,
             animationDirection: i % 2 === 0 ? 'normal' : 'reverse',
+            animationDelay: `${-i * 0.5}s`
           }}
         >
-          {/* Nodos de Memória Iluminados */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-5 h-5 bg-primary rounded-full shadow-[0_0_50px_#FFBF00]" />
+          {/* Filamentos de Dados (Nodos) */}
+          <div 
+            className="absolute top-0 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-primary rounded-full shadow-[0_0_15px_#FFBF00]" 
+            style={{ opacity: i % 2 === 0 ? 1 : 0.4 }}
+          />
           {i % 3 === 0 && (
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-4 bg-secondary rounded-full shadow-[0_0_40px_#FF8C00]" />
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-white rounded-full shadow-[0_0_10px_#FFF]" />
           )}
-          {i % 4 === 0 && (
-            <div className="absolute top-1/2 left-0 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-[0_0_30px_#FFF]" />
+          {i % 5 === 0 && (
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-2 h-0.5 bg-secondary shadow-[0_0_8px_#FF8C00]" />
           )}
         </div>
       ))}
 
-      {/* Grid de Memória Disco A: */}
+      {/* Grid de Partículas de Ambiente */}
       <div className={cn(
-        "absolute w-[1000px] h-[1000px] border border-primary/10 rounded-full z-10",
-        "bg-[repeating-conic-gradient(from_0deg,transparent_0deg,transparent_5deg,rgba(255,191,0,0.08)_5deg,rgba(255,191,0,0.08)_6deg)]",
-        isProcessing ? "animate-[orbit_0.5s_linear_infinite]" : "animate-[orbit_40s_linear_infinite]"
+        "absolute w-[1200px] h-[1200px] border border-primary/5 rounded-full z-10",
+        "bg-[repeating-conic-gradient(from_0deg,transparent_0deg,transparent_2deg,rgba(255,170,0,0.03)_2deg,rgba(255,170,0,0.03)_3deg)]",
+        isProcessing ? "animate-[spin_1s_linear_infinite]" : "animate-[spin_60s_linear_infinite]"
       )} />
+
+      {/* Brilho Atmosférico Profundo */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,100,0,0.1)_0%,transparent_60%)] pointer-events-none" />
     </div>
   );
 }

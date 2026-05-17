@@ -1,15 +1,17 @@
+
 "use client"
 
 import React, { useState, useEffect } from 'react';
-import { HardDrive, ShieldCheck, Activity, Zap, MonitorDown } from 'lucide-react';
+import { HardDrive, ShieldCheck, Activity, Zap, Cpu } from 'lucide-react';
 
 export function TelemetryHUD() {
-  const [metrics, setMetrics] = useState({ free: 48.7 });
+  const [metrics, setMetrics] = useState({ free: 48.8, load: 12 });
 
   useEffect(() => {
     const timer = setInterval(() => {
       setMetrics({
-        free: 48.7 + Math.random() * 0.02 
+        free: 48.8,
+        load: 8 + Math.random() * 15
       });
     }, 2000);
     return () => clearInterval(timer);
@@ -17,34 +19,45 @@ export function TelemetryHUD() {
 
   return (
     <>
-      {/* HUD Esquerdo: Status do Disco A: */}
-      <div className="fixed bottom-8 left-8 z-50 flex flex-col gap-4 font-code animate-in fade-in duration-1000">
-        <div className="flex flex-col gap-3 p-4 border border-primary/20 hud-glass rounded-lg w-56">
-          <div className="flex justify-between items-center text-[9px] text-primary font-black tracking-widest">
-            <span className="flex items-center gap-2"><HardDrive className="w-3 h-3" /> SSD_A:</span>
-            <span className="animate-pulse">{metrics.free.toFixed(1)} GB</span>
+      {/* HUD Esquerdo: Status do Cérebro A: */}
+      <div className="fixed top-12 left-12 z-50 flex flex-col gap-8 font-code animate-in fade-in slide-in-from-left duration-1000">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-3 text-[10px] text-primary font-black tracking-[0.3em]">
+            <HardDrive className="w-4 h-4" /> SSD_PARTITION_A
           </div>
-          <div className="h-0.5 bg-primary/10 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-primary shadow-[0_0_10px_#FFBF00]" 
-              style={{ width: '82%' }} 
-            />
+          <div className="text-[24px] font-headline font-black text-primary/80">48.8 GB</div>
+          <div className="w-32 h-0.5 bg-primary/20 relative">
+            <div className="absolute inset-0 bg-primary shadow-[0_0_10px_#FFBF00]" style={{ width: '100%' }} />
           </div>
-          <div className="flex justify-between items-center text-[7px] text-primary/40 font-black tracking-widest uppercase">
-            <span>RESIDENTE</span>
-            <ShieldCheck className="w-2 h-2" />
+          <div className="text-[7px] text-primary/40 tracking-widest">ESTADO: RESIDENTE_SBF</div>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-3 text-[10px] text-primary/60 font-black tracking-[0.3em]">
+            <Cpu className="w-4 h-4" /> NEURAL_LOAD
+          </div>
+          <div className="text-[18px] font-headline font-black text-primary/60">{metrics.load.toFixed(1)}%</div>
+          <div className="w-32 h-0.5 bg-primary/10">
+            <div className="h-full bg-primary/40" style={{ width: `${metrics.load}%` }} />
           </div>
         </div>
       </div>
 
-      {/* HUD Direito: Status de Link */}
-      <div className="fixed bottom-8 right-8 z-50 animate-in fade-in duration-1000 delay-300 font-code">
-        <div className="flex gap-4 text-[8px] text-primary/30 font-black tracking-widest uppercase">
-          <div className="flex items-center gap-1"><Activity className="w-2 h-2 animate-pulse" /> SBF</div>
-          <div className="flex items-center gap-1"><Zap className="w-2 h-2" /> V12</div>
-          <div className="flex items-center gap-1"><MonitorDown className="w-2 h-2" /> SYNC</div>
+      {/* HUD Direito: Status do Sistema */}
+      <div className="fixed top-12 right-12 z-50 flex flex-col gap-6 items-end font-code animate-in fade-in slide-in-from-right duration-1000 delay-300">
+        <div className="flex items-center gap-2 text-[8px] text-primary/40 tracking-[0.5em]">
+          <ShieldCheck className="w-3 h-3" /> SECURITY_ACTIVE
+        </div>
+        <div className="flex items-center gap-2 text-[8px] text-primary/40 tracking-[0.5em]">
+          <Activity className="w-3 h-3 animate-pulse" /> SYNC_GITHUB_OK
+        </div>
+        <div className="flex items-center gap-2 text-[8px] text-primary/40 tracking-[0.5em]">
+          <Zap className="w-3 h-3" /> V12_POWER_STABLE
         </div>
       </div>
+
+      {/* Background Grid - Minimalist */}
+      <div className="fixed inset-0 pointer-events-none opacity-[0.02] bg-[linear-gradient(rgba(255,191,0,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(255,191,0,0.1)_1px,transparent_1px)] bg-[size:100px_100px]" />
     </>
   );
 }
