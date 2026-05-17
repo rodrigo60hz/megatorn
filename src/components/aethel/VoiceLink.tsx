@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -32,8 +31,6 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
   
   const isSystemActiveRef = useRef(false);
   const isProcessingRef = useRef(false);
-  const lastClapTimeRef = useRef(0);
-  const clapCountRef = useRef(0);
 
   const ensureAudioContext = useCallback(async () => {
     if (typeof window === 'undefined') return null;
@@ -47,60 +44,25 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
     return audioContextRef.current;
   }, []);
 
-  const startRecognition = useCallback(() => {
-    if (!isSystemActiveRef.current || isPlaying || isProcessingRef.current || isListening) return;
+  const handleProcessInput = async (query: string) => {
+    if (isProcessingRef.current || !query.trim()) return;
+    isProcessingRef.current = true;
+    onProcessingChange(true);
+    setIsTransmitting(true);
+
     try {
-      recognitionRef.current?.start();
-    } catch (e) {
-      // Reconhecimento já rodando ou erro silencioso
-    }
-  }, [isPlaying, isListening]);
-
-  const initAudioSystem = async () => {
-    try {
-      const ctx = await ensureAudioContext();
-      if (!ctx) return;
-      
-      if (!micStreamRef.current) {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        micStreamRef.current = stream;
-        const source = ctx.createMediaStreamSource(stream);
-        const analyser = ctx.createAnalyser();
-        analyser.fftSize = 256;
-        source.connect(analyser);
-
-        const bufferLength = analyser.frequencyBinCount;
-        const dataArray = new Uint8Array(bufferLength);
-
-        const detectClaps = () => {
-          if (!isSystemActiveRef.current) return;
-          analyser.getByteFrequencyData(dataArray);
-          let sum = 0;
-          for(let i = 0; i < bufferLength; i++) sum += dataArray[i];
-          const average = sum / bufferLength;
-
-          if (average > 115) { 
-            const now = Date.now();
-            if (now - lastClapTimeRef.current > 150) {
-              if (now - lastClapTimeRef.current < 800) {
-                clapCountRef.current++;
-              } else {
-                clapCountRef.current = 1;
-              }
-              lastClapTimeRef.current = now;
-              
-              if (clapCountRef.current >= 2) {
-                clapCountRef.current = 0;
-                startRecognition();
-              }
-            }
-          }
-          animationFrameRef.current = requestAnimationFrame(detectClaps);
-        };
-        detectClaps();
+      const result = await aiVoiceInteraction(query);
+      setIsTransmitting(false);
+      await ensureAudioContext();
+      if (result.audio && audioRef.current) {
+        audioRef.current.src = result.audio;
+        await audioRef.current.play();
       }
     } catch (err) {
-      console.error("ERRO_LINK_NEURAL_SOM:", err);
+      console.error("ERRO_MEGATRON_A:", err);
+    } finally {
+      isProcessingRef.current = false;
+      onProcessingChange(false);
     }
   };
 
@@ -111,17 +73,12 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       const recognition = new SpeechRecognition();
       recognition.continuous = false; 
       recognition.lang = 'pt-BR';
-      recognition.onstart = () => {
-        setIsListening(true);
-      };
+      recognition.onstart = () => setIsListening(true);
       recognition.onresult = (event: any) => {
         const text = event.results[0][0].transcript;
         if (text) handleProcessInput(text);
       };
-      recognition.onerror = () => {
-        setIsListening(false);
-        setIsTransmitting(false);
-      };
+      recognition.onerror = () => setIsListening(false);
       recognition.onend = () => setIsListening(false);
       recognitionRef.current = recognition;
     }
@@ -131,32 +88,21 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       audio.onplay = () => {
         setIsPlaying(true);
         setIsListening(false);
-        try { recognitionRef.current?.stop(); } catch (e) {}
       };
-      audio.onended = () => {
-        setIsPlaying(false);
-        if (isSystemActiveRef.current) setTimeout(startRecognition, 600);
-      };
+      audio.onended = () => setIsPlaying(false);
       audioRef.current = audio;
     }
-  }, [startRecognition]);
+  }, []);
 
   const toggleSystemPower = async () => {
     if (isActive) {
       setIsActive(false);
       isSystemActiveRef.current = false;
       recognitionRef.current?.stop();
-      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
-      micStreamRef.current?.getTracks().forEach(t => t.stop());
-      micStreamRef.current = null;
-      if (audioContextRef.current) {
-        await audioContextRef.current.close().catch(() => {});
-        audioContextRef.current = null;
-      }
     } else {
       setIsActive(true);
       isSystemActiveRef.current = true;
-      await initAudioSystem();
+      await ensureAudioContext();
       if (audioRef.current) {
         audioRef.current.src = SILENCE_WAV;
         audioRef.current.play().catch(() => {});
@@ -164,73 +110,33 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
     }
   };
 
-  const handleProcessInput = async (query: string) => {
-    if (isProcessingRef.current || !query.trim()) return;
-    isProcessingRef.current = true;
-    onProcessingChange(true);
-    setIsTransmitting(true);
-
-    try {
-      const result = await aiVoiceInteraction(query);
-      setIsTransmitting(false);
-      
-      await ensureAudioContext();
-      
-      if (result.audio && audioRef.current) {
-        audioRef.current.src = result.audio;
-        await audioRef.current.play();
-      }
-    } catch (err) {
-      console.error("ERRO_MATRIZ_SSD_A:", err);
-    } finally {
-      isProcessingRef.current = false;
-      onProcessingChange(false);
-    }
-  };
-
   return (
     <div className="fixed inset-0 pointer-events-none flex items-center justify-center">
-      <div className="pointer-events-auto flex flex-col items-center gap-10">
-        <div className="relative group">
-          <div className={cn(
-            "absolute inset-0 rounded-full bg-primary/40 blur-[130px] scale-150 transition-all duration-1000",
-            isActive ? "opacity-100" : "opacity-0",
-            (isTransmitting || isPlaying) && "bg-secondary/70 animate-pulse shadow-[0_0_180px_rgba(255,191,0,0.9)]"
-          )} />
-          <Button 
-            onClick={toggleSystemPower}
-            className={cn(
-              "w-72 h-72 rounded-full border-[12px] transition-all duration-700 relative z-10 flex items-center justify-center",
-              !isActive ? "bg-black/98 border-primary/20" :
-              isPlaying ? "bg-primary/70 border-primary shadow-[0_0_250px_#FFBF00] scale-110" :
-              isListening ? "bg-primary/40 border-primary animate-pulse scale-105" :
-              "bg-primary/10 border-primary/50"
-            )}
-          >
-            {!isActive ? (
-              <div className="flex flex-col items-center gap-4">
-                <Power className="w-24 h-24 text-primary/30" />
-                <span className="text-[12px] font-black text-primary tracking-[0.4em] uppercase">ATIVAR_PROGRAMA_A:</span>
-              </div>
-            ) : isPlaying ? (
-              <div className="flex gap-2.5 items-end justify-center h-44">
-                {[...Array(10)].map((_, i) => (
-                  <div key={i} className="w-3 bg-primary rounded-full animate-bounce" style={{ height: `${70 + Math.random() * 150}px`, animationDuration: `${0.12 + i * 0.03}s`, boxShadow: '0 0 35px #FFBF00' }} />
-                ))}
-              </div>
-            ) : isListening ? (
-              <div className="relative flex items-center justify-center">
-                <Mic className="w-32 h-32 text-primary drop-shadow-[0_0_60px_#FFBF00]" />
-                <div className="absolute w-52 h-52 rounded-full border-[8px] border-primary/70 animate-ping" />
-              </div>
-            ) : (
-              <div className="flex flex-col items-center gap-4">
-                <BrainCircuit className="w-24 h-24 text-primary animate-pulse opacity-60" />
-                <span className="text-[12px] font-black text-primary opacity-50 uppercase tracking-[0.6em]">MEGATRON_PRONTO</span>
-              </div>
-            )}
-          </Button>
-        </div>
+      <div className="pointer-events-auto">
+        <Button 
+          onClick={toggleSystemPower}
+          className={cn(
+            "w-64 h-64 rounded-full border-[1px] transition-all duration-700 relative z-10",
+            !isActive ? "bg-black/80 border-primary/20" :
+            isPlaying ? "bg-primary/20 border-primary shadow-[0_0_100px_#FFBF00] scale-105" :
+            isListening ? "bg-primary/30 border-primary animate-pulse" :
+            "bg-transparent border-primary/40"
+          )}
+        >
+          {!isActive ? (
+            <Power className="w-16 h-16 text-primary/20" />
+          ) : isPlaying ? (
+            <div className="flex gap-1.5 items-end justify-center h-24">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="w-2 bg-primary rounded-full animate-bounce" style={{ height: `${30 + Math.random() * 50}px`, animationDuration: `${0.2 + i * 0.1}s` }} />
+              ))}
+            </div>
+          ) : isListening ? (
+            <Mic className="w-16 h-16 text-primary drop-shadow-[0_0_20px_#FFBF00]" />
+          ) : (
+            <BrainCircuit className="w-16 h-16 text-primary/40 animate-pulse" />
+          )}
+        </Button>
       </div>
     </div>
   );

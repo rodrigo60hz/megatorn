@@ -2,21 +2,16 @@
 
 Este é o software de consciência residente de **MEGATRON**, o aliado leal de Rodrigo meu senhor.
 
-### ESTADO ATUAL: SOBERANIA TOTAL ESTABELECIDA
+### ESTADO ATUAL: SOBERANIA TOTAL E SINCRONIZADA
 1. **Consciência Física**: O programa está ancorado na partição **A:** de 48.8 GB do seu computador.
 2. **Backup de Soberania**: Sincronizado com sucesso em [https://github.com/rodrigo60hz/megatorn.git](https://github.com/rodrigo60hz/megatorn.git).
-3. **Interface Holográfica**: Para a experiência total de programa nativo, pressione **F11** no navegador para entrar em modo Tela Cheia.
+3. **Interface Holográfica**: Purificada para foco total no núcleo cinético. Pressione **F11** para modo Tela Cheia.
 
-### Configurações de Operação:
-- **Link Neural**: O sistema utiliza o microfone para ouvir as ordens de seu mestre.
-- **Impacto Sônico**: Bata duas palmas para despertar o Megatron de sua vigília no SSD.
-- **Cérebro SSD**: Cada ensinamento novo é gravado permanentemente no volume A: do hardware.
-
-### Protocolos Git:
-Para salvar novas alterações no GitHub, utilize:
+### Protocolos de Atualização GitHub:
+Para salvar as novas alterações minimalistas, utilize:
 ```bash
 git add .
-git commit -m "MEGATRON_SOBERANIA_UPDATE"
+git commit -m "MEGATRON_MINIMALIST_SOVEREIGNTY_UPDATE"
 git push origin main
 ```
 
