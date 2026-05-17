@@ -40,7 +40,12 @@ python tts.py "Teste de soberania no disco A"
 ```bash
 ffmpeg -i audio/tts.wav -af "asetrate=44100*0.75,atempo=1.1" audio/mega_teste.wav
 ```
-*Se der erro de "comando não encontrado", o FFmpeg não está no seu PATH.*
+
+**PASSO 5: Testar Reprodução (PowerShell)**
+```bash
+powershell -c "(New-Object Media.SoundPlayer 'audio/tts.wav').PlaySync();"
+```
+*Se não ouvir nada, verifique seu dispositivo de saída ou se o arquivo existe.*
 
 ---
 
