@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState } from 'react';
@@ -20,17 +19,17 @@ export default function Home() {
         <KineticCore isProcessing={isProcessing} />
       </div>
 
-      {/* Persistent UI Overlays */}
+      {/* Minimalist Telemetry HUD */}
       <TelemetryHUD />
 
-      {/* Voice Interactions - Only Interaction Point */}
+      {/* Voice Link Core */}
       <VoiceLink onProcessingChange={setIsProcessing} />
 
-      {/* Corner Accents */}
-      <div className="fixed top-0 left-0 w-32 h-32 border-t-2 border-l-2 border-primary/20 m-4 pointer-events-none" />
-      <div className="fixed top-0 right-0 w-32 h-32 border-t-2 border-r-2 border-primary/20 m-4 pointer-events-none" />
-      <div className="fixed bottom-0 left-0 w-32 h-32 border-b-2 border-l-2 border-primary/20 m-4 pointer-events-none" />
-      <div className="fixed bottom-0 right-0 w-32 h-32 border-b-2 border-r-2 border-primary/20 m-4 pointer-events-none" />
+      {/* Corner Accents - Pure aesthetic */}
+      <div className="fixed top-0 left-0 w-24 h-24 border-t border-l border-primary/10 m-6 pointer-events-none" />
+      <div className="fixed top-0 right-0 w-24 h-24 border-t border-r border-primary/10 m-6 pointer-events-none" />
+      <div className="fixed bottom-0 left-0 w-24 h-24 border-b border-l border-primary/10 m-6 pointer-events-none" />
+      <div className="fixed bottom-0 right-0 w-24 h-24 border-b border-r border-primary/10 m-6 pointer-events-none" />
     </main>
   );
 }
