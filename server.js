@@ -5,7 +5,7 @@ import fs from "fs";
 import path from "path";
 
 /**
- * MEGATRON | ORQUESTRADOR NEURAL V15.2 (A:)
+ * MEGATRON | ORQUESTRADOR NEURAL V15.5 (A:)
  * PROTOCOLO DE REFLEXO RÁPIDO: Bypass de IA para resposta instantânea.
  * SENSORES DE DIAGNÓSTICO: Visibilidade total do pipeline.
  */
