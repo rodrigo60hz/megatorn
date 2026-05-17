@@ -5,8 +5,8 @@ import fs from "fs";
 import path from "path";
 
 /**
- * MEGATRON | ORQUESTRADOR NEURAL V14.0 (A:)
- * MODO DE FORÇA BRUTA: Logs táticos, diagnóstico em tempo real e teste de som.
+ * MEGATRON | ORQUESTRADOR NEURAL V15.0 (A:)
+ * MODO RESPOSTA RÁPIDA: Bypass de IA para saudações e logs de alta visibilidade.
  */
 
 const app = express();
@@ -23,6 +23,23 @@ dirs.forEach(dir => {
     console.log(`[SISTEMA] DIRETÓRIO_CRIADO: ${dir}`);
   }
 });
+
+/**
+ * PROTOCOLO DE REFLEXO RÁPIDO (Bypass de IA)
+ * Resolve latência em interações triviais.
+ */
+function respostaRapida(texto) {
+  const t = texto.toLowerCase();
+
+  if (t.includes("boa tarde")) return "Boa tarde. Sistema Megatron ativo.";
+  if (t.includes("bom dia")) return "Bom dia. Pronto para operação.";
+  if (t.includes("boa noite")) return "Boa noite. Monitoramento ativo.";
+  if (t.includes("oi") || t.includes("olá")) return "Estou ouvindo, Rodrigo meu senhor.";
+  if (t.includes("quem é você")) return "Sou Megatron, sua inteligência residente no disco A:.";
+  if (t.includes("status")) return "Sistemas estáveis. Partição A: com 48.8 GB de soberania.";
+
+  return null;
+}
 
 function detectarEmocao(texto) {
   const t = texto.toLowerCase();
@@ -133,18 +150,24 @@ app.post("/chat", async (req, res) => {
 
   console.log(`\n[LINK_NEURAL] Rodrigo meu senhor: "${message}"`);
 
+  // 1. Verificar Resposta Rápida (Bypass IA)
+  let reply = respostaRapida(message);
   const emocao = detectarEmocao(message);
-  const prompt = promptMegatron(message, emocao);
 
   try {
-    console.log("Chamando IA...");
-    const reply = await callOllama(prompt);
-    console.log("Resposta IA:", reply);
+    if (!reply) {
+      console.log("Chamando IA (Ollama)...");
+      const prompt = promptMegatron(message, emocao);
+      reply = await callOllama(prompt);
+      console.log("Resposta IA:", reply);
+    } else {
+      console.log("[SISTEMA] Resposta rápida ativada:", reply);
+    }
 
-    console.log("Gerando voz...");
+    console.log("Gerando voz (TTS)...");
     await runPython("tts.py", [reply]);
     
-    console.log("Processando efeitos de áudio...");
+    console.log("Processando efeitos de áudio (FFmpeg)...");
     await processAudioByEmotion(emocao);
     
     console.log("Enviando para hardware de som...");
@@ -158,10 +181,10 @@ app.post("/chat", async (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`\nMEGATRON | ORQUESTRADOR NEURAL V14.0 ONLINE (PORTA ${PORT})`);
+    console.log(`\nMEGATRON | ORQUESTRADOR NEURAL V15.0 ONLINE (PORTA ${PORT})`);
     console.log(`Soberania no Disco A: 48.8 GB | Status: Pronto para o combate.\n`);
     
-    // TESTE DIRETO DE VOZ NA INICIALIZAÇÃO (FORÇA BRUTA)
+    // TESTE DIRETO DE VOZ NA INICIALIZAÇÃO
     console.log("EXECUTANDO TESTE DIRETO DE HARDWARE...");
     const testFile = path.join(process.cwd(), "audio", "tts.wav");
     if (fs.existsSync(testFile)) {
@@ -169,7 +192,5 @@ app.listen(PORT, () => {
             "-c",
             `(New-Object Media.SoundPlayer '${testFile}').PlaySync();`
         ]);
-    } else {
-        console.log("[AVISO] Arquivo tts.wav não encontrado. O teste inicial foi ignorado.");
     }
 });
