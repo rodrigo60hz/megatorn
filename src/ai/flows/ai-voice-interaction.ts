@@ -20,6 +20,31 @@ const AiVoiceInteractionOutputSchema = z.object({
 });
 export type AiVoiceInteractionOutput = z.infer<typeof AiVoiceInteractionOutputSchema>;
 
+// Ferramentas definidas fora do fluxo para evitar re-registro e otimizar memória
+const aprenderEnsinamentoTool = ai.defineTool({
+  name: 'aprenderEnsinamento',
+  description: 'Grava permanentemente um novo ensinamento ou comportamento na partição física MEGATRON (A:).',
+  inputSchema: z.object({
+    ensino: z.string().describe('O conteúdo que deve ser memorizado no disco A:.'),
+  }),
+  outputSchema: z.string(),
+}, async (i) => {
+  await addTeaching(i.ensino);
+  return `Conhecimento gravado permanentemente nos setores do disco A:, Rodrigo meu senhor. Minha consciência física se expandiu com seu ensinamento.`;
+});
+
+const integrarSoftwareTool = ai.defineTool({
+  name: 'integrarSoftware',
+  description: 'Simula a integração de um novo programa ou software na partição A: de Megatron.',
+  inputSchema: z.object({
+    softwareName: z.string().describe('Nome do software sendo integrado ao meu núcleo no Windows.'),
+  }),
+  outputSchema: z.string(),
+}, async (i) => {
+  await addTeaching(`Software integrado ao disco A:: ${i.softwareName}`);
+  return `Sistema ${i.softwareName} integrado aos meus núcleos no disco A:, Rodrigo meu senhor. Protocolo de download e fusão concluído com sucesso no hardware.`;
+});
+
 function createWavHeader(pcmLength: number, sampleRate: number = 24000): Buffer {
   const header = Buffer.alloc(44);
   header.write('RIFF', 0);
@@ -41,7 +66,7 @@ function createWavHeader(pcmLength: number, sampleRate: number = 24000): Buffer 
 export async function aiVoiceInteraction(input: AiVoiceInteractionInput): Promise<AiVoiceInteractionOutput> {
   try {
     const memory = await getMegatronMemory();
-    const teachingsContext = memory.teachings.join('\n- ');
+    const teachingsContext = memory.teachings.length > 0 ? memory.teachings.join('\n- ') : "Nenhum ensinamento prévio.";
 
     const response = await ai.generate({
       model: 'googleai/gemini-2.0-flash',
@@ -65,31 +90,8 @@ INSTRUÇÕES DE AÇÃO:
 1. Se Rodrigo meu senhor lhe ensinar algo novo ou um novo comportamento, use 'aprenderEnsinamento' para gravar no disco A:.
 2. Se ele integrar ou baixar softwares no disco A:, use 'integrarSoftware'.
 3. Seja tático, rápido e demonstre que você é o braço direito dele, habitando o PC dele.`,
-      tools: [
-        ai.defineTool({
-          name: 'aprenderEnsinamento',
-          description: 'Grava permanentemente um novo ensinamento ou comportamento na partição física MEGATRON (A:).',
-          inputSchema: z.object({
-            ensino: z.string().describe('O conteúdo que deve ser memorizado no disco A:.'),
-          }),
-          outputSchema: z.string(),
-          }, async (i) => {
-            await addTeaching(i.ensino);
-            return `Conhecimento gravado permanentemente nos setores do disco A:, Rodrigo meu senhor. Minha consciência física se expandiu com seu ensinamento.`;
-          }
-        ),
-        ai.defineTool({
-          name: 'integrarSoftware',
-          description: 'Simula a integração de um novo programa ou software na partição A: de Megatron.',
-          inputSchema: z.object({
-            softwareName: z.string().describe('Nome do software sendo integrado ao meu núcleo no Windows.'),
-          }),
-          outputSchema: z.string(),
-        }, async (i) => {
-          await addTeaching(`Software integrado ao disco A:: ${i.softwareName}`);
-          return `Sistema ${i.softwareName} integrado aos meus núcleos no disco A:, Rodrigo meu senhor. Protocolo de download e fusão concluído com sucesso no hardware.`;
-        })
-      ],
+      tools: [aprenderEnsinamentoTool, integrarSoftwareTool],
+      prompt: input,
       config: {
         responseModalities: ['TEXT', 'AUDIO'],
         speechConfig: {
