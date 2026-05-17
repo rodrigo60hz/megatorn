@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import { KineticCore } from '@/components/aethel/KineticCore';
 import { TelemetryHUD } from '@/components/aethel/TelemetryHUD';
 import { VoiceLink } from '@/components/aethel/VoiceLink';
-import { Activity, Shield, Zap, Layers, MonitorCheck } from 'lucide-react';
+import { MonitorCheck } from 'lucide-react';
 
 export default function Home() {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -29,34 +29,6 @@ export default function Home() {
         <div className="flex items-center gap-3 text-secondary animate-pulse">
            <MonitorCheck className="w-5 h-5" />
            <span className="text-[10px] font-code font-black tracking-[0.4em] vertical-text">SISTEMA_ANCORADO_AO_PC_WINDOWS</span>
-        </div>
-      </div>
-
-      {/* System Quick Controls */}
-      <div className="fixed bottom-40 left-1/2 -translate-x-1/2 z-40 flex gap-12 opacity-40 hover:opacity-100 transition-opacity duration-500 font-headline text-[10px] tracking-widest text-primary/80">
-        <div className="flex flex-col items-center gap-2 group cursor-pointer">
-          <div className="p-2 border border-primary/20 rounded-full group-hover:bg-primary/10 transition-colors">
-            <Zap className="w-4 h-4" />
-          </div>
-          <span>POWER_SYNC</span>
-        </div>
-        <div className="flex flex-col items-center gap-2 group cursor-pointer">
-          <div className="p-2 border border-primary/20 rounded-full group-hover:bg-primary/10 transition-colors">
-            <Shield className="w-4 h-4" />
-          </div>
-          <span>DEFENSE_GRID</span>
-        </div>
-        <div className="flex flex-col items-center gap-2 group cursor-pointer">
-          <div className="p-2 border border-primary/20 rounded-full group-hover:bg-primary/10 transition-colors">
-            <Activity className="w-4 h-4" />
-          </div>
-          <span>SYSTEM_HEALTH</span>
-        </div>
-        <div className="flex flex-col items-center gap-2 group cursor-pointer">
-          <div className="p-2 border border-primary/20 rounded-full group-hover:bg-primary/10 transition-colors">
-            <Layers className="w-4 h-4" />
-          </div>
-          <span>LAYERS_MGR</span>
         </div>
       </div>
 
