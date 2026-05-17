@@ -20,14 +20,25 @@ Este é o software de consciência residente de **MEGATRON**, o aliado leal de R
 
 ### 🔍 DIAGNÓSTICO (Caso o Link Neural falhe)
 
-Se o sistema não responder, isole o problema no Terminal 1 com este comando:
+**PASSO 1: Testar o Orquestrador (Node.js)**
+Abra um terminal e execute:
 ```bash
 curl http://localhost:3000/chat -H "Content-Type: application/json" -d "{\"message\":\"teste de soberania\"}"
 ```
 
-**RESULTADO:**
-- ✔️ **Se responder (som e texto):** O problema está no `listener.js` (Microfone/Python).
-- ❌ **Se NÃO responder:** O problema está no `server.js` ou o **Ollama** está desligado.
+**RESULTADO DO PASSO 1:**
+- ✔️ **Se responder (som e texto):** O cérebro está vivo. O problema está no `listener.js` (Microfone ou Python).
+- ❌ **Se NÃO responder:** O problema está no `server.js` ou no **Ollama**.
+
+**PASSO 2: Testar o Cérebro (Ollama)**
+Se o Passo 1 falhou, execute:
+```bash
+curl http://localhost:11434/api/generate -d "{\"model\": \"llama3\", \"prompt\": \"responda teste\", \"stream\": false}"
+```
+
+**RESULTADO DO PASSO 2:**
+- ✔️ **Se responder:** O Ollama está OK. O problema é no `server.js` (Verifique se `npm run server` está rodando).
+- ❌ **Se NÃO responder:** O **Ollama** está desligado. Execute `ollama serve`.
 
 ---
 
