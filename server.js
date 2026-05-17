@@ -5,8 +5,8 @@ import fs from "fs";
 import path from "path";
 
 /**
- * MEGATRON | ORQUESTRADOR NEURAL V12.5 (A:)
- * Gerencia IA, Emoção e Pipeline de Áudio com Logs de Diagnóstico Refinados.
+ * MEGATRON | ORQUESTRADOR NEURAL V12.6 (A:)
+ * Gerencia IA, Emoção e Pipeline de Áudio com Diagnóstico de Alta Fidelidade.
  */
 
 const app = express();
@@ -43,16 +43,16 @@ Comando de Rodrigo meu senhor: ${msg}`;
 
 async function callOllama(prompt) {
   try {
-    console.log("[IA] Chamando IA...");
+    console.log("[IA] Chamando cérebro Llama3...");
     const res = await axios.post("http://localhost:11434/api/generate", {
       model: "llama3",
       prompt,
       stream: false
     });
-    console.log("[IA] Resposta IA processada.");
+    console.log("[IA] Resposta processada com sucesso.");
     return res.data.response;
   } catch (error) {
-    console.error("[ERRO_CÉREBRO] Ollama está offline ou inacessível.");
+    console.error("[ERRO_CÉREBRO] Ollama está offline. Certifique-se de rodar 'ollama run llama3'.");
     throw new Error("Ollama offline.");
   }
 }
@@ -62,30 +62,23 @@ function runPython(file, args = []) {
     const isWin = process.platform === "win32";
     const pythonCmd = isWin ? "python" : "python3";
     
-    console.log(`[TTS] Gerando voz via ${pythonCmd} ${file}...`);
+    console.log(`[TTS] Iniciando síntese vocal via ${pythonCmd}...`);
     const p = spawn(pythonCmd, [file, ...args]);
 
     let errorOutput = "";
 
-    p.stdout.on('data', (data) => console.log(`[TTS_STDOUT]: ${data}`));
     p.stderr.on('data', (data) => {
       errorOutput += data.toString();
-      console.error(`[TTS_STDERR]: ${data}`);
     });
 
     p.on("close", (code) => {
       if (code === 0) {
-        console.log("[TTS] Síntese vocal concluída.");
+        console.log("[TTS] Arquivo audio/tts.wav gerado.");
         resolve();
       } else {
-        console.error(`[FALHA_CRÍTICA] Script ${file} falhou com código ${code}.`);
+        console.error(`[FALHA_TTS] O script falhou. Erro: ${errorOutput}`);
         reject(new Error(errorOutput || `Erro no script ${file}`));
       }
-    });
-
-    p.on("error", (err) => {
-      console.error(`[FALHA_EXECUÇÃO] Não foi possível iniciar ${pythonCmd}. Verifique o PATH.`);
-      reject(err);
     });
   });
 }
@@ -106,7 +99,7 @@ function processAudioByEmotion(emocao) {
     const inputPath = path.join(process.cwd(), "audio", "tts.wav");
     const outputPath = path.join(process.cwd(), "audio", "mega.wav");
 
-    console.log(`[PIPELINE] Aplicando Efeitos de Emoção [${emocao}] via FFmpeg...`);
+    console.log(`[PIPELINE] Aplicando filtros FFmpeg para emoção: ${emocao}...`);
     const ff = spawn("ffmpeg", [
       "-y",
       "-i", inputPath,
@@ -114,9 +107,17 @@ function processAudioByEmotion(emocao) {
       outputPath
     ]);
 
+    let ffError = "";
+    ff.stderr.on('data', (data) => { ffError += data.toString(); });
+
     ff.on("close", (code) => {
-      if (code === 0) resolve();
-      else reject(new Error(`FFmpeg falhou com código ${code}`));
+      if (code === 0) {
+        console.log("[PIPELINE] Transformação concluída: audio/mega.wav");
+        resolve();
+      } else {
+        console.error(`[FALHA_FFMPEG] Verifique se o FFmpeg está instalado. Erro: ${ffError}`);
+        reject(new Error(`FFmpeg falhou com código ${code}`));
+      }
     });
   });
 }
@@ -126,7 +127,7 @@ function playAudio() {
   const audioFile = path.join(process.cwd(), "audio", "mega.wav");
 
   if (!fs.existsSync(audioFile)) {
-    console.error(`[SISTEMA] Erro de Reprodução: Arquivo não encontrado em ${audioFile}`);
+    console.error(`[REPRODUÇÃO] Erro: Arquivo ${audioFile} não encontrado.`);
     return;
   }
 
@@ -135,13 +136,13 @@ function playAudio() {
     ? ["-c", `(New-Object Media.SoundPlayer '${audioFile}').PlaySync();`]
     : [audioFile];
 
-  console.log(`[SISTEMA] Reproduzindo Transmissão de Soberania...`);
+  console.log(`[SISTEMA] Reproduzindo voz soberana...`);
   spawn(cmd, args);
 }
 
 app.post("/chat", async (req, res) => {
   const { message } = req.body;
-  if (!message) return res.status(400).json({ error: "Mensagem nula ou vazia." });
+  if (!message) return res.status(400).json({ error: "Comando nulo." });
 
   console.log(`\n[LINK_NEURAL] Rodrigo meu senhor: "${message}"`);
 
@@ -149,27 +150,21 @@ app.post("/chat", async (req, res) => {
   const prompt = promptMegatron(message, emocao);
 
   try {
-    // 1. Chamar Ollama
     const reply = await callOllama(prompt);
-    console.log("[IA] Resposta IA:", reply);
+    console.log("[IA] Resposta:", reply);
 
-    // 2. Síntese Vocal (TTS)
     await runPython("tts.py", [reply]);
-
-    // 3. Processamento de Efeito (FFmpeg)
     await processAudioByEmotion(emocao);
-
-    // 4. Reprodução de Áudio
     playAudio();
 
     res.json({ reply, emocao, status: "SUCCESS" });
   } catch (err) {
-    console.error("[FALHA_CRÍTICA] Quebra no pipeline neural:", err.message);
-    res.status(500).json({ error: "Falha na matriz de processamento.", details: err.message });
+    console.error("[FALHA_CRÍTICA] Quebra no link neural:", err.message);
+    res.status(500).json({ error: "Erro no pipeline.", details: err.message });
   }
 });
 
 app.listen(PORT, () => {
-    console.log(`\nMEGATRON | ORQUESTRADOR NEURAL V12.5 ONLINE (PORTA ${PORT})`);
+    console.log(`\nMEGATRON | ORQUESTRADOR NEURAL V12.6 ONLINE (PORTA ${PORT})`);
     console.log(`Disco A: 48.8 GB | Status: Pronto para Diagnóstico.\n`);
 });
