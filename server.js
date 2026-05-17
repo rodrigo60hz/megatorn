@@ -141,10 +141,11 @@ app.post("/chat", async (req, res) => {
   if (rapido) {
     console.log("[SISTEMA] Resposta Rápida Ativada:", rapido);
     try {
-      console.log("Gerando voz (Reflexo)...");
+      console.log("Chamando IA (Modo Reflexo)...");
       await runPython("tts.py", [rapido]);
-      console.log("Processando áudio (Reflexo)...");
+      console.log("Gerando voz (Reflexo)...");
       await processAudioByEmotion("neutro");
+      console.log("Enviando para hardware de som (Reflexo)...");
       playAudio();
       return res.json({ reply: rapido, status: "SUCCESS" });
     } catch (err) {

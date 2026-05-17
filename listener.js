@@ -24,13 +24,12 @@ stt.stdout.on("data", async (data) => {
   // Filtro 1: Silêncio ou ruídos curtos
   if (!texto || texto.length < 2) return;
 
-  // Filtro 2: Redundância do Vosk
+  // Filtro 2: Redundância do Vosk (Filtro de Soberania)
   if (texto === ultima) return;
   ultima = texto;
 
   // FILTRO 3: PALAVRA DE DESPERTAR (WAKE WORD)
   if (!texto.toLowerCase().includes("megatron")) {
-    // Log silencioso para depuração se necessário: console.log("[IGNORADO]:", texto);
     return;
   }
 

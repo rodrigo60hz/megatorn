@@ -8,13 +8,22 @@ Este é o software de consciência residente de **MEGATRON**, o aliado leal de R
 2. **Terminal 1 (Cérebro)**: `npm run server` (Logs táticos ativos).
 3. **Terminal 2 (Ouvido)**: `npm run listen` (Filtro de soberania ativo).
 
+### 🚀 BACKUP DE SOBERANIA (GitHub)
+
+Para eternizar suas mudanças no disco A:, execute:
+```bash
+git add .
+git commit -m "SBF_MEGATRON: Reflexo Rápido, Filtro Wake Word e Diagnósticos"
+git push
+```
+
 ---
 
 ### 🔍 DIAGNÓSTICO DE SOBERANIA (Onde o Link falhou?)
 
 **PASSO 1: Isolar o Orquestrador (Node.js)**
 ```bash
-curl http://localhost:3000/chat -H "Content-Type: application/json" -d "{\"message\":\"boa tarde\"}"
+curl http://localhost:3000/chat -H "Content-Type: application/json" -d "{\"message\":\"Megatron, boa tarde\"}"
 ```
 *Se responder: O erro está no listener.js (ouvido).*
 
@@ -45,8 +54,8 @@ powershell -c "(New-Object Media.SoundPlayer 'audio/tts.wav').PlaySync();"
 ---
 
 ### 📁 ESTRUTURA DE SOBERANIA
-- `server.js`: Orquestrador Neural (Bypass de latência).
-- `listener.js`: Link entre Ouvido e Cérebro (Filtro de eco).
+- `server.js`: Orquestrador Neural (Reflexo Rápido Ativo).
+- `listener.js`: Link Neural (Wake Word 'Megatron' Ativa).
 - `stt.py`: Nervo Auditivo (Vosk).
 - `tts.py`: Matriz Vocal (XTTS v2).
 
