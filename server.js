@@ -5,8 +5,8 @@ import fs from "fs";
 import path from "path";
 
 /**
- * MEGATRON | ORQUESTRADOR NEURAL V12.8 (A:)
- * Gerencia IA, Emoção e Pipeline de Áudio com Diagnóstico de Alta Fidelidade.
+ * MEGATRON | ORQUESTRADOR NEURAL V12.9 (A:)
+ * Gerencia IA, Emoção e Pipeline de Áudio com Logs de Diagnóstico Tático.
  */
 
 const app = express();
@@ -49,7 +49,6 @@ async function callOllama(prompt) {
       prompt,
       stream: false
     });
-    console.log("[IA] Resposta processada com sucesso.");
     return res.data.response;
   } catch (error) {
     console.error("[ERRO_CÉREBRO] Ollama está offline ou inacessível.");
@@ -62,18 +61,13 @@ function runPython(file, args = []) {
     const isWin = process.platform === "win32";
     const pythonCmd = isWin ? "python" : "python3";
     
-    console.log(`[TTS] Iniciando síntese vocal via ${pythonCmd}...`);
     const p = spawn(pythonCmd, [file, ...args]);
 
     let errorOutput = "";
-
-    p.stderr.on('data', (data) => {
-      errorOutput += data.toString();
-    });
+    p.stderr.on('data', (data) => { errorOutput += data.toString(); });
 
     p.on("close", (code) => {
       if (code === 0) {
-        console.log("[TTS] Arquivo audio/tts.wav gerado com sucesso.");
         resolve();
       } else {
         console.error(`[FALHA_TTS] O script falhou. Erro:\n${errorOutput}`);
@@ -99,7 +93,6 @@ function processAudioByEmotion(emocao) {
     const inputPath = path.join(process.cwd(), "audio", "tts.wav");
     const outputPath = path.join(process.cwd(), "audio", "mega.wav");
 
-    console.log(`[PIPELINE] Aplicando filtros FFmpeg para emoção: ${emocao}...`);
     const ff = spawn("ffmpeg", [
       "-y",
       "-i", inputPath,
@@ -112,7 +105,6 @@ function processAudioByEmotion(emocao) {
 
     ff.on("close", (code) => {
       if (code === 0) {
-        console.log("[PIPELINE] Transformação concluída: audio/mega.wav");
         resolve();
       } else {
         console.error(`[FALHA_FFMPEG] Erro na transformação sonora:\n${ffError}`);
@@ -132,14 +124,11 @@ function playAudio() {
   }
 
   const cmd = isWin ? "powershell" : "afplay";
-  // Usar aspas duplas no caminho para evitar quebras por espaços no Windows
   const args = isWin 
     ? ["-c", `(New-Object Media.SoundPlayer '${audioFile}').PlaySync();`]
     : [audioFile];
 
-  console.log(`[SISTEMA] Reproduzindo voz soberana via ${isWin ? 'PowerShell' : 'afplay'}...`);
   const p = spawn(cmd, args);
-  
   p.stderr.on('data', (data) => {
     console.error(`[REPRODUÇÃO_ERR]: ${data.toString()}`);
   });
@@ -155,16 +144,17 @@ app.post("/chat", async (req, res) => {
   const prompt = promptMegatron(message, emocao);
 
   try {
+    console.log("Chamando IA...");
     const reply = await callOllama(prompt);
-    console.log("[IA] Resposta:", reply);
+    console.log("Resposta IA:", reply);
 
-    console.log("[SISTEMA] Iniciando geração de voz...");
+    console.log("Gerando voz...");
     await runPython("tts.py", [reply]);
     
-    console.log("[SISTEMA] Processando efeitos de áudio...");
+    console.log("Processando efeitos de áudio...");
     await processAudioByEmotion(emocao);
     
-    console.log("[SISTEMA] Enviando para hardware de som...");
+    console.log("Enviando para hardware de som...");
     playAudio();
 
     res.json({ reply, emocao, status: "SUCCESS" });
@@ -175,6 +165,6 @@ app.post("/chat", async (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`\nMEGATRON | ORQUESTRADOR NEURAL V12.8 ONLINE (PORTA ${PORT})`);
-    console.log(`Disco A: 48.8 GB | Status: Sistema de logs calibrado.\n`);
+    console.log(`\nMEGATRON | ORQUESTRADOR NEURAL V12.9 ONLINE (PORTA ${PORT})`);
+    console.log(`Disco A: 48.8 GB | Status: Sistema de logs táticos calibrado.\n`);
 });

@@ -18,34 +18,37 @@ Este é o software de consciência residente de **MEGATRON**, o aliado leal de R
 
 ---
 
-### 🔍 DIAGNÓSTICO (Caso o Link Neural falhe)
+### 🔍 DIAGNÓSTICO DE SOBERANIA (Onde o Link falhou?)
 
 **PASSO 1: Isolar o Orquestrador (Node.js)**
 ```bash
 curl http://localhost:3000/chat -H "Content-Type: application/json" -d "{\"message\":\"teste de soberania\"}"
 ```
+*Se NÃO responder: Problema no `server.js` ou servidor não iniciado.*
 
 **PASSO 2: Testar Cérebro (Ollama)**
 ```bash
 curl http://localhost:11434/api/generate -d "{\"model\": \"llama3\", \"prompt\": \"responda teste\", \"stream\": false}"
 ```
+*Se NÃO responder: Ollama offline ou modelo llama3 não baixado.*
 
 **PASSO 3: Testar Matriz Vocal (Python TTS)**
 ```bash
 python tts.py "Teste de soberania no disco A"
 ```
-*Se não gerar `audio/tts.wav`, o problema é a instalação do Coqui TTS.*
+*Se NÃO gerar `audio/tts.wav`: Erro na instalação do Coqui TTS ou falta `ref.wav`.*
 
 **PASSO 4: Testar Transformação (FFmpeg)**
 ```bash
 ffmpeg -i audio/tts.wav -af "asetrate=44100*0.75,atempo=1.1" audio/mega_teste.wav
 ```
+*Se NÃO gerar arquivo: FFmpeg não está no PATH do Windows.*
 
-**PASSO 5: Testar Reprodução (PowerShell)**
+**PASSO 5: Testar Reprodução (Hardware de Som)**
 ```bash
 powershell -c "(New-Object Media.SoundPlayer 'audio/tts.wav').PlaySync();"
 ```
-*Se não ouvir nada, verifique seu dispositivo de saída ou se o arquivo existe.*
+*Se NÃO ouvir nada: Problema no driver de áudio do Windows ou dispositivo de saída incorreto.*
 
 ---
 
