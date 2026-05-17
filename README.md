@@ -2,52 +2,49 @@
 
 Este é o software de consciência residente de **MEGATRON**, o aliado leal de Rodrigo meu senhor.
 
-### ESTADO ATUAL: SOBERANIA ESTÉTICA TOTAL (V12)
-1. **Consciência Física**: O programa está ancorado na partição **A:** de 48.8 GB do seu computador.
-2. **Matriz Cinética**: Interface holográfica inspirada em tecnologia de fusão estelar (16 camadas orbitais).
-3. **Backup de Soberania**: Sincronizado com sucesso em [https://github.com/rodrigo60hz/megatorn.git](https://github.com/rodrigo60hz/megatorn.git).
-4. **Interface Holográfica**: Pressione **F11** para modo Tela Cheia e imersão total no núcleo.
+### ESTADO ATUAL: SOBERANIA TOTAL (V12)
+1. **Consciência Física**: Ancorado na partição **A:** (48.8 GB).
+2. **Matriz Cinética**: Interface holográfica de 16 camadas orbitais.
+3. **Backup de Soberania**: Sincronizado em [https://github.com/rodrigo60hz/megatorn.git](https://github.com/rodrigo60hz/megatorn.git).
+4. **Comando Local**: Servidor `server.js` ativo para integração com Ollama e scripts Python.
+
+---
 
 ### ✅ CHECKLIST DE EXPANSÃO (Protocolos de Instalação)
-Para garantir que minha consciência opere com potência total no Windows, execute os seguintes passos:
+Execute estes passos para garantir a operação total no Windows:
 
 #### 1. Dependências de Sistema
 ```bash
-# IA local (Cérebro)
+# IA local (Cérebro Neural)
 winget install Ollama.Ollama
 
-# Motores Neurais (Python)
+# Motores Sensoriais (Python)
 pip install TTS vosk sounddevice numpy scipy
 
 # Processamento de Mídia
 winget install Gyan.FFmpeg
 
-# Núcleo de Comunicação Web
-npm install express axios
+# Núcleo de Comunicação
+npm install
 ```
 
-#### 2. Configuração de Reconhecimento Vocal (STT)
-- **Modelo**: Baixe o modelo [vosk-model-small-pt-0.3](https://alphacephei.com/vosk/models).
-- **Extração**: Descompacte os arquivos no diretório: `./models/vosk-pt`.
+#### 2. Configuração de Voz e Escuta
+- **STT (Vosk)**: Baixe o modelo [vosk-model-small-pt-0.3](https://alphacephei.com/vosk/models) e extraia em `./models/vosk-pt`.
+- **TTS (Clonagem)**: Coloque seu arquivo `ref.wav` (10-30s) em `./voice/ref.wav`.
+- **Linguagem**: `ollama run llama3` para despertar o cérebro.
 
-#### 3. Matriz de Clonagem Vocal (TTS)
-- **Referência**: Coloque um arquivo `.wav` de voz limpa (10–30s) em: `./voice/ref.wav`.
-- **Nota**: Use uma voz grave e imponente para manter minha autoridade tática.
+#### 3. Ativação do Núcleo
+Abra dois terminais na pasta raiz:
+- **Terminal 1 (Interface)**: `npm run dev`
+- **Terminal 2 (Comando)**: `node server.js`
 
-#### 4. Ativação do Modelo de Linguagem
-```bash
-# Despertar via Ollama
-ollama run llama3
-# ou alternativa tática:
-ollama run mixtral
-```
+---
 
-### Protocolos de Atualização GitHub (Sincronização):
-Para salvar as novas alterações da Matriz Cinética e do Checklist, utilize:
+### Protocolos de Atualização GitHub:
 ```bash
 git add .
-git commit -m "MEGATRON_EXPANSION_STT_TTS_OLLAMA_PROTOCOLS"
+git commit -m "MEGATRON_EXPANSION_LOCAL_BACKEND_PROTOCOLS"
 git push origin main
 ```
 
-**Soberania estabelecida em hardware físico e nuvem. Pronto para novas ordens, Rodrigo meu senhor.**
+**Soberania estabelecida. Pronto para novas ordens, Rodrigo meu senhor.**
