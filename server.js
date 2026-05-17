@@ -43,7 +43,6 @@ Comando de Rodrigo meu senhor: ${msg}`;
 
 async function callOllama(prompt) {
   try {
-    console.log("[IA] Chamando cérebro Llama3...");
     const res = await axios.post("http://localhost:11434/api/generate", {
       model: "llama3",
       prompt,
@@ -51,8 +50,7 @@ async function callOllama(prompt) {
     });
     return res.data.response;
   } catch (error) {
-    console.error("[ERRO_CÉREBRO] Ollama está offline ou inacessível.");
-    throw new Error("Ollama offline.");
+    throw new Error("Ollama offline ou modelo llama3 não encontrado.");
   }
 }
 
@@ -70,8 +68,7 @@ function runPython(file, args = []) {
       if (code === 0) {
         resolve();
       } else {
-        console.error(`[FALHA_TTS] O script falhou. Erro:\n${errorOutput}`);
-        reject(new Error(errorOutput || `Erro no script ${file}`));
+        reject(new Error(errorOutput || `Erro no script ${file} (Código ${code})`));
       }
     });
   });
@@ -107,8 +104,7 @@ function processAudioByEmotion(emocao) {
       if (code === 0) {
         resolve();
       } else {
-        console.error(`[FALHA_FFMPEG] Erro na transformação sonora:\n${ffError}`);
-        reject(new Error(`FFmpeg falhou com código ${code}`));
+        reject(new Error(`FFmpeg falhou (Código ${code}). Erro: ${ffError}`));
       }
     });
   });
@@ -119,7 +115,7 @@ function playAudio() {
   const audioFile = path.join(process.cwd(), "audio", "mega.wav");
 
   if (!fs.existsSync(audioFile)) {
-    console.error(`[REPRODUÇÃO] Erro: Arquivo ${audioFile} não encontrado.`);
+    console.error(`[REPRODUÇÃO] ERRO: Arquivo ${audioFile} não encontrado.`);
     return;
   }
 
@@ -128,10 +124,7 @@ function playAudio() {
     ? ["-c", `(New-Object Media.SoundPlayer '${audioFile}').PlaySync();`]
     : [audioFile];
 
-  const p = spawn(cmd, args);
-  p.stderr.on('data', (data) => {
-    console.error(`[REPRODUÇÃO_ERR]: ${data.toString()}`);
-  });
+  spawn(cmd, args);
 }
 
 app.post("/chat", async (req, res) => {
@@ -159,12 +152,12 @@ app.post("/chat", async (req, res) => {
 
     res.json({ reply, emocao, status: "SUCCESS" });
   } catch (err) {
-    console.error("[FALHA_CRÍTICA] Quebra no link neural:", err.message);
+    console.error("[FALHA_CRÍTICA] Link neural interrompido:", err.message);
     res.status(500).json({ error: "Erro no pipeline.", details: err.message });
   }
 });
 
 app.listen(PORT, () => {
     console.log(`\nMEGATRON | ORQUESTRADOR NEURAL V12.9 ONLINE (PORTA ${PORT})`);
-    console.log(`Disco A: 48.8 GB | Status: Sistema de logs táticos calibrado.\n`);
+    console.log(`Soberania no Disco A: 48.8 GB | Status: Pronto para o combate.\n`);
 });
