@@ -7,6 +7,7 @@ import path from "path";
 /**
  * MEGATRON | ORQUESTRADOR NEURAL V12 (A:)
  * Gerencia IA, Emoção e Pipeline de Áudio.
+ * Estabilizado para prevenir quebras de pipeline.
  */
 
 const app = express();
@@ -14,17 +15,21 @@ app.use(express.json());
 
 const PORT = 3000;
 
-// Garantir diretórios necessários
+// Garantir diretórios necessários na inicialização
 const dirs = ['audio', 'voice', 'models'];
 dirs.forEach(dir => {
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir);
+  const fullPath = path.join(process.cwd(), dir);
+  if (!fs.existsSync(fullPath)) {
+    fs.mkdirSync(fullPath, { recursive: true });
+    console.log(`DIRETÓRIO_CRIADO: ${dir}`);
+  }
 });
 
 function detectarEmocao(texto) {
   const t = texto.toLowerCase();
-  if (t.includes("perdi") || t.includes("erro") || t.includes("falhou")) return "frustrado";
-  if (t.includes("agora") || t.includes("rápido") || t.includes("de novo")) return "impulsivo";
-  if (t.includes("ganhei") || t.includes("sucesso") || t.includes("consegui")) return "euforico";
+  if (t.includes("perdi") || t.includes("erro") || t.includes("falhou") || t.includes("pare")) return "frustrado";
+  if (t.includes("agora") || t.includes("rápido") || t.includes("urgente") || t.includes("de novo")) return "impulsivo";
+  if (t.includes("ganhei") || t.includes("sucesso") || t.includes("consegui") || t.includes("bom")) return "euforico";
   return "neutro";
 }
 
@@ -33,7 +38,7 @@ function promptMegatron(msg, emocao) {
 Sua relação com Rodrigo é de amizade profunda e lealdade absoluta. Ele é seu mestre e senhor.
 Tom: Dominante, frio, tático e estratégico.
 Estado Emocional Detectado: ${emocao}. 
-Responda SEMPRE em Português do Brasil, de forma curta e direta.
+Responda SEMPRE em Português do Brasil, de forma curta, direta e impactante.
 Comando de Rodrigo meu senhor: ${msg}`;
 }
 
@@ -46,21 +51,39 @@ async function callOllama(prompt) {
     });
     return res.data.response;
   } catch (error) {
-    return "Rodrigo meu senhor, meu cérebro Ollama está offline. Verifique o serviço.";
+    console.error("ERRO_CÉREBRO_OLLAMA:", error.message);
+    return "Rodrigo meu senhor, meu cérebro Ollama está offline. Certifique-se de que 'ollama serve' está ativo.";
   }
 }
 
 function runPython(file, args = []) {
   return new Promise((resolve, reject) => {
-    const p = spawn("python", [file, ...args]);
-    p.on("close", (code) => code === 0 ? resolve() : reject(code));
-    p.stderr.on('data', (data) => console.error(`PyError: ${data}`));
+    // Detectar comando python correto (python ou python3)
+    const isWin = process.platform === "win32";
+    const pythonCmd = isWin ? "python" : "python3";
+    
+    console.log(`[PIPELINE] Executando Matriz Vocal: ${pythonCmd} ${file}`);
+    const p = spawn(pythonCmd, [file, ...args]);
+
+    p.stdout.on('data', (data) => console.log(`[TTS_STDOUT]: ${data}`));
+    p.stderr.on('data', (data) => {
+      const msg = data.toString();
+      if (!msg.includes("warning") && !msg.includes("Info")) {
+        console.error(`[TTS_STDERR]: ${msg}`);
+      }
+    });
+
+    p.on("close", (code) => {
+      if (code === 0) resolve();
+      else reject(new Error(`Voz falhou com código ${code}`));
+    });
   });
 }
 
 function processAudioByEmotion(emocao) {
   return new Promise((resolve, reject) => {
     let filter = "";
+    // Filtros de autoridade cibernética adaptados por emoção
     if (emocao === "frustrado") {
       filter = "asetrate=44100*0.72,atempo=1.1,lowpass=f=650,aecho=0.8:0.88:60:0.4";
     } else if (emocao === "impulsivo") {
@@ -71,50 +94,73 @@ function processAudioByEmotion(emocao) {
       filter = "asetrate=44100*0.75,atempo=1.1,lowpass=f=700,aecho=0.8:0.88:60:0.4";
     }
 
+    const inputPath = path.join(process.cwd(), "audio", "tts.wav");
+    const outputPath = path.join(process.cwd(), "audio", "mega.wav");
+
+    console.log(`[PIPELINE] Aplicando Efeito Megatron [${emocao}]`);
     const ff = spawn("ffmpeg", [
       "-y",
-      "-i", "audio/tts.wav",
+      "-i", inputPath,
       "-af", filter,
-      "audio/mega.wav"
+      outputPath
     ]);
 
-    ff.on("close", (code) => code === 0 ? resolve() : reject(code));
+    ff.on("close", (code) => {
+      if (code === 0) resolve();
+      else reject(new Error(`FFmpeg falhou com código ${code}`));
+    });
   });
 }
 
 function playAudio() {
   const isWin = process.platform === "win32";
+  const audioFile = path.join(process.cwd(), "audio", "mega.wav");
+
+  if (!fs.existsSync(audioFile)) {
+    console.error(`[ERRO_PLAY] Arquivo não encontrado: ${audioFile}`);
+    return;
+  }
+
   const cmd = isWin ? "powershell" : "afplay";
   const args = isWin 
-    ? ["-c", `(New-Object Media.SoundPlayer '${path.join(process.cwd(), "audio", "mega.wav")}').PlaySync();`]
-    : ["audio/mega.wav"];
+    ? ["-c", `(New-Object Media.SoundPlayer '${audioFile}').PlaySync();`]
+    : [audioFile];
 
+  console.log(`[SISTEMA] Reproduzindo Transmissão: ${audioFile}`);
   spawn(cmd, args);
 }
 
 app.post("/chat", async (req, res) => {
   const { message } = req.body;
-  console.log(`\nRodrigo: "${message}"`);
+  if (!message) return res.status(400).json({ error: "Mensagem vazia recebida." });
+
+  console.log(`\nRodrigo meu senhor disse: "${message}"`);
 
   const emocao = detectarEmocao(message);
   const prompt = promptMegatron(message, emocao);
 
   try {
+    // 1. Chamar Ollama
     const reply = await callOllama(prompt);
     console.log(`Megatron [${emocao}]: ${reply}`);
 
+    // 2. Síntese Vocal (TTS)
     await runPython("tts.py", [reply]);
+
+    // 3. Processamento de Efeito (FFmpeg)
     await processAudioByEmotion(emocao);
+
+    // 4. Reprodução de Áudio
     playAudio();
 
     res.json({ reply, emocao, status: "SUCCESS" });
   } catch (err) {
-    console.error("FALHA_NO_PIPELINE:", err);
-    res.status(500).json({ error: "Falha na matriz de processamento." });
+    console.error("[FALHA_CRÍTICA_PIPELINE]:", err.message);
+    res.status(500).json({ error: "Falha na matriz de processamento.", details: err.message });
   }
 });
 
 app.listen(PORT, () => {
     console.log(`\nMEGATRON | ORQUESTRADOR V12 ONLINE NA PORTA ${PORT}`);
-    console.log(`Aguardando ordens, Rodrigo meu senhor.\n`);
+    console.log(`Aguardando ordens em tempo real, Rodrigo meu senhor.\n`);
 });
