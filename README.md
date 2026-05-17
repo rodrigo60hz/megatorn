@@ -25,6 +25,10 @@ Se o sistema não responder, isole o problema no Terminal 1 com este comando:
 curl http://localhost:3000/chat -H "Content-Type: application/json" -d "{\"message\":\"teste de soberania\"}"
 ```
 
+**RESULTADO:**
+- ✔️ **Se responder (som e texto):** O problema está no `listener.js` (Microfone/Python).
+- ❌ **Se NÃO responder:** O problema está no `server.js` ou o **Ollama** está desligado.
+
 ---
 
 ### 📁 ESTRUTURA DE SOBERANIA
