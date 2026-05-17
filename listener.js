@@ -2,43 +2,50 @@ import { spawn } from "child_process";
 import axios from "axios";
 
 /**
- * MEGATRON | LINK NEURAL (A:) - FILTRO DE SOBERANIA
- * Versão segura com proteção contra redundância do Vosk.
+ * MEGATRON | LINK NEURAL (A:) - FILTRO DE SOBERANIA V2
+ * Agora com Protocolo de Despertar (Wake Word).
  */
 
 const SERVER_URL = "http://localhost:3000/chat";
 
 console.log("\n[LINK_NEURAL] NERVO AUDITIVO CONECTADO");
-console.log("[LINK_NEURAL] Aguardando comando de Rodrigo meu senhor...");
+console.log("[LINK_NEURAL] Aguardando comando de Rodrigo meu senhor (Invoque 'Megatron')...");
 
 const isWin = process.platform === "win32";
 const pythonCmd = isWin ? "python" : "python3";
 
 const stt = spawn(pythonCmd, ["stt.py"]);
 
-let ultima = ""; // Filtro de redundância para o Vosk
+let ultima = ""; // Filtro de redundância
 
 stt.stdout.on("data", async (data) => {
   const texto = data.toString().trim();
 
-  // Filtro 1: Ignorar silêncio ou ruídos curtos
+  // Filtro 1: Silêncio ou ruídos curtos
   if (!texto || texto.length < 2) return;
 
-  // Filtro 2: Ignorar repetições fantasmas (Vosk glitch)
+  // Filtro 2: Redundância do Vosk
   if (texto === ultima) return;
   ultima = texto;
 
-  console.log("Você:", texto);
+  // FILTRO 3: PALAVRA DE DESPERTAR (WAKE WORD)
+  if (!texto.toLowerCase().includes("megatron")) {
+    // Log silencioso para depuração se necessário: console.log("[IGNORADO]:", texto);
+    return;
+  }
+
+  console.log("Comando Detectado:", texto);
 
   try {
     const res = await axios.post(SERVER_URL, {
       message: texto
     });
 
-    console.log("Megatron:", res.data.reply);
-
+    if (res.data.reply) {
+      console.log("Megatron:", res.data.reply);
+    }
   } catch (err) {
-    console.error("Erro na transmissão:", err.message);
+    console.error("ERRO_TRANSMISSAO:", err.message);
     if (err.code === 'ECONNREFUSED') {
       console.error("CRÍTICO: server.js offline na porta 3000.");
     }
