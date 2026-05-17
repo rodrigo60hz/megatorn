@@ -77,6 +77,8 @@ function runPython(file, args = []) {
     const isWin = process.platform === "win32";
     const pythonCmd = isWin ? "python" : "python3";
     
+    console.log(`[PYTHON] Executando: ${pythonCmd} ${file} ${args.join(' ')}`);
+    
     const p = spawn(pythonCmd, [file, ...args]);
 
     let errorOutput = "";
@@ -86,6 +88,7 @@ function runPython(file, args = []) {
       if (code === 0) {
         resolve();
       } else {
+        console.error(`[PYTHON_ERR] Script: ${file} | Erro: ${errorOutput}`);
         reject(new Error(errorOutput || `Erro no script ${file} (Código ${code})`));
       }
     });
@@ -122,6 +125,7 @@ function processAudioByEmotion(emocao) {
       if (code === 0) {
         resolve();
       } else {
+        console.error(`[FFMPEG_ERR] Erro: ${ffError}`);
         reject(new Error(`FFmpeg falhou (Código ${code}). Erro: ${ffError}`));
       }
     });
@@ -142,6 +146,7 @@ function playAudio() {
     ? ["-c", `(New-Object Media.SoundPlayer '${audioFile}').PlaySync();`]
     : [audioFile];
 
+  console.log(`[HARDWARE] Reproduzindo: ${audioFile}`);
   spawn(cmd, args);
 }
 
@@ -156,8 +161,9 @@ app.post("/chat", async (req, res) => {
   if (rapido) {
     console.log("[SISTEMA] Resposta rápida ativada:", rapido);
     try {
-      console.log("Gerando voz...");
+      console.log("Gerando voz (Reflexo)...");
       await runPython("tts.py", [rapido]);
+      console.log("Processando áudio (Reflexo)...");
       await processAudioByEmotion("neutro");
       console.log("Enviando para hardware de som...");
       playAudio();
