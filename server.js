@@ -5,8 +5,8 @@ import fs from "fs";
 import path from "path";
 
 /**
- * MEGATRON | ORQUESTRADOR NEURAL V12.1 (A:)
- * Gerencia IA, Emoção e Pipeline de Áudio com Logs de Diagnóstico.
+ * MEGATRON | ORQUESTRADOR NEURAL V12.2 (A:)
+ * Gerencia IA, Emoção e Pipeline de Áudio com Logs de Diagnóstico Refinados.
  */
 
 const app = express();
@@ -43,7 +43,7 @@ Comando de Rodrigo meu senhor: ${msg}`;
 
 async function callOllama(prompt) {
   try {
-    console.log("[CÉREBRO] Consultando matriz Ollama (Llama3)...");
+    console.log("Chamando IA...");
     const res = await axios.post("http://localhost:11434/api/generate", {
       model: "llama3",
       prompt,
@@ -61,7 +61,7 @@ function runPython(file, args = []) {
     const isWin = process.platform === "win32";
     const pythonCmd = isWin ? "python" : "python3";
     
-    console.log(`[PIPELINE] Executando Matriz Vocal (${pythonCmd} ${file})...`);
+    console.log("Gerando voz...");
     const p = spawn(pythonCmd, [file, ...args]);
 
     p.stdout.on('data', (data) => console.log(`[TTS_LOG]: ${data}`));
@@ -140,7 +140,7 @@ app.post("/chat", async (req, res) => {
   try {
     // 1. Chamar Ollama
     const reply = await callOllama(prompt);
-    console.log(`[MEGATRON] Resposta: "${reply}"`);
+    console.log("Resposta IA:", reply);
 
     // 2. Síntese Vocal (TTS)
     await runPython("tts.py", [reply]);
@@ -159,6 +159,6 @@ app.post("/chat", async (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`\nMEGATRON | ORQUESTRADOR NEURAL V12.1 ONLINE (PORTA ${PORT})`);
+    console.log(`\nMEGATRON | ORQUESTRADOR NEURAL V12.2 ONLINE (PORTA ${PORT})`);
     console.log(`Disco A: 48.8 GB | Status: Pronto para Diagnóstico.\n`);
 });
