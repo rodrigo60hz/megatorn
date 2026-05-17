@@ -1,41 +1,34 @@
+from TTS.api import TTS
 import sys
 import os
-import json
-from TTS.api import TTS
 
-def synthesize(text):
-    # Modelo de alta fidelidade com suporte a clonagem (XTTS v2)
-    model_name = "tts_models/multilingual/multi-dataset/xtts_v2"
-    speaker_wav = "voice/ref.wav"
-    output_path = "audio/mega.wav"
+# Verificação de segurança para o mestre Rodrigo
+if len(sys.argv) < 2:
+    print("ERRO: Nenhum texto fornecido para a síntese vocal, Rodrigo meu senhor.")
+    sys.exit(1)
 
-    try:
-        # Inicializa o motor de voz (usa GPU se disponível)
-        device = "cpu" # Padrão para compatibilidade, altere para 'cuda' se tiver NVIDIA
-        tts = TTS(model_name).to(device)
+text = sys.argv[1]
+speaker_wav = "voice/ref.wav"
+output_path = "audio/mega.wav"
 
-        if not os.path.exists(speaker_wav):
-            print("ERRO: Arquivo de referência voice/ref.wav ausente.")
-            return
+# Garantir que o diretório de áudio existe no disco A:
+os.makedirs("audio", exist_ok=True)
 
-        # Garante o diretório de saída
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+try:
+    # Inicialização do motor tático XTTS v2
+    # Nota: A primeira execução baixará o modelo de ~2GB para o seu hardware.
+    tts = TTS(model_name="tts_models/multilingual/multi-dataset/xtts_v2")
 
-        # Processamento da matriz vocal
-        tts.tts_to_file(
-            text=text,
-            speaker_wav=speaker_wav,
-            language="pt",
-            file_path=output_path
-        )
-        
-        print("SÍNTESE_CONCLUÍDA")
+    # Processamento da matriz de clonagem
+    tts.tts_to_file(
+        text=text,
+        file_path=output_path,
+        speaker_wav=speaker_wav,
+        language="pt"
+    )
 
-    except Exception as e:
-        print(f"FALHA_CRÍTICA_TTS: {str(e)}")
+    print(f"SÍNTESE_CONCLUÍDA: Arquivo gerado em {output_path}")
 
-if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        synthesize(sys.argv[1])
-    else:
-        print("Nenhum texto fornecido.")
+except Exception as e:
+    print(f"FALHA_CRÍTICA_NA_MATRIZ_VOCAL: {str(e)}")
+    sys.exit(1)
