@@ -43,7 +43,7 @@ Comando de Rodrigo meu senhor: ${msg}`;
 
 async function callOllama(prompt) {
   try {
-    console.log("Chamando IA...");
+    console.log("[IA] Consultando Llama3...");
     const res = await axios.post("http://localhost:11434/api/generate", {
       model: "llama3",
       prompt,
@@ -52,7 +52,7 @@ async function callOllama(prompt) {
     return res.data.response;
   } catch (error) {
     console.error("[ERRO_CÉREBRO] Ollama está offline ou inacessível.");
-    return "Rodrigo meu senhor, meu cérebro Ollama está offline. Certifique-se de que 'ollama serve' está ativo.";
+    throw new Error("Ollama offline.");
   }
 }
 
@@ -61,20 +61,30 @@ function runPython(file, args = []) {
     const isWin = process.platform === "win32";
     const pythonCmd = isWin ? "python" : "python3";
     
-    console.log("Gerando voz...");
+    console.log(`[TTS] Gerando voz via ${pythonCmd} ${file}...`);
     const p = spawn(pythonCmd, [file, ...args]);
 
-    p.stdout.on('data', (data) => console.log(`[TTS_LOG]: ${data}`));
+    let errorOutput = "";
+
+    p.stdout.on('data', (data) => console.log(`[TTS_STDOUT]: ${data}`));
     p.stderr.on('data', (data) => {
-      const msg = data.toString();
-      if (msg.includes("Error") || msg.includes("Fail")) {
-        console.error(`[TTS_ERR]: ${msg}`);
-      }
+      errorOutput += data.toString();
+      console.error(`[TTS_STDERR]: ${data}`);
     });
 
     p.on("close", (code) => {
-      if (code === 0) resolve();
-      else reject(new Error(`Voz falhou com código ${code}`));
+      if (code === 0) {
+        console.log("[TTS] Síntese vocal concluída.");
+        resolve();
+      } else {
+        console.error(`[FALHA_CRÍTICA] Script ${file} falhou com código ${code}.`);
+        reject(new Error(errorOutput || `Erro no script ${file}`));
+      }
+    });
+
+    p.on("error", (err) => {
+      console.error(`[FALHA_EXECUÇÃO] Não foi possível iniciar ${pythonCmd}. Verifique o PATH.`);
+      reject(err);
     });
   });
 }
@@ -140,7 +150,7 @@ app.post("/chat", async (req, res) => {
   try {
     // 1. Chamar Ollama
     const reply = await callOllama(prompt);
-    console.log("Resposta IA:", reply);
+    console.log("[IA] Resposta:", reply);
 
     // 2. Síntese Vocal (TTS)
     await runPython("tts.py", [reply]);

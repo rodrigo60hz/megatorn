@@ -26,16 +26,21 @@ Execute o comando abaixo para testar a resposta do núcleo:
 curl http://localhost:3000/chat -H "Content-Type: application/json" -d "{\"message\":\"teste de soberania\"}"
 ```
 
-**ANÁLISE DOS LOGS NO TERMINAL 1:**
-- 👉 **Se parar antes de "Gerando voz":** O problema está na **IA (Ollama)**. Verifique se o Ollama está rodando.
-- 👉 **Se parar depois de "Gerando voz":** O problema está no **TTS (Python)** ou no **FFmpeg**. Verifique as bibliotecas.
-- ✔️ **Se responder (som e texto):** O cérebro está OK. O problema está no `listener.js` (Microfone).
-
-**PASSO 2: Testar o Cérebro Diretamente (Ollama)**
-Se o Passo 1 falhou antes da IA responder:
+**PASSO 2: Testar Cérebro (Ollama)**
 ```bash
 curl http://localhost:11434/api/generate -d "{\"model\": \"llama3\", \"prompt\": \"responda teste\", \"stream\": false}"
 ```
+
+**PASSO 3: Testar Matriz Vocal (Python TTS)**
+Se o Node não gera voz, teste o script Python diretamente:
+```bash
+python tts.py "Teste de soberania no disco A"
+```
+*Nota: Se falhar aqui, verifique se o arquivo `voice/ref.wav` existe e se as bibliotecas foram instaladas.*
+
+**ANÁLISE DOS LOGS NO TERMINAL 1:**
+- 👉 **Se parar antes de "Gerando voz":** O problema está na **IA (Ollama)**.
+- 👉 **Se parar depois de "Gerando voz":** O problema está no **TTS (Python)** ou no **FFmpeg**.
 
 ---
 
