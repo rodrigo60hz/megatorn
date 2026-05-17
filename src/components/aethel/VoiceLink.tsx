@@ -17,8 +17,7 @@ declare global {
   }
 }
 
-// Pequeno áudio de silêncio para forçar o AudioContext a acordar
-const SILENCE_WAV = "data:audio/wav;base64,UklGRigAAABXQVZFRm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YQQAAAAEAA==";
+const SILENCE_WAV = "data:audio/wav;base64,UklGRjIAAABXQVZFRm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YfIAAACAgICAgICAgICAgICAgICAgIA=";
 
 export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: boolean) => void }) {
   const [isActive, setIsActive] = useState(false);
@@ -39,8 +38,8 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
   const lastClapTimeRef = useRef(0);
   const clapCountRef = useRef(0);
 
-  // Protocolo Fênix: Garante que o AudioContext esteja sempre ressuscitado
   const ensureAudioContext = useCallback(async () => {
+    if (typeof window === 'undefined') return null;
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
       audioContextRef.current = new AudioContextClass();
@@ -63,8 +62,8 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
   const initAudioSystem = async () => {
     try {
       const ctx = await ensureAudioContext();
+      if (!ctx) return;
       
-      // Inicia análise de microfone para detecção de palmas
       if (!micStreamRef.current) {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         micStreamRef.current = stream;
@@ -83,10 +82,9 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
           for(let i = 0; i < bufferLength; i++) sum += dataArray[i];
           const average = sum / bufferLength;
 
-          // Impacto sônico (palma) detectado
           if (average > 115) { 
             const now = Date.now();
-            if (now - lastClapTimeRef.current > 150) { // Anti-debounce
+            if (now - lastClapTimeRef.current > 150) {
               if (now - lastClapTimeRef.current < 800) {
                 clapCountRef.current++;
               } else {
@@ -94,7 +92,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
               }
               lastClapTimeRef.current = now;
               
-              if (clapCountRef.current >= 2) { // Duas palmas
+              if (clapCountRef.current >= 2) {
                 clapCountRef.current = 0;
                 startRecognition();
               }
@@ -110,6 +108,7 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
   };
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
       const recognition = new SpeechRecognition();
@@ -164,7 +163,6 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       isSystemActiveRef.current = true;
       setTranscript('MEGATRON_ONLINE_NO_DISCO_A:');
       await initAudioSystem();
-      // Força o AudioContext a despertar
       if (audioRef.current) {
         audioRef.current.src = SILENCE_WAV;
         audioRef.current.play().catch(() => {});
@@ -184,7 +182,6 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
       setTranscript(result.text);
       setIsTransmitting(false);
       
-      // Ressuscita o áudio se necessário antes de falar
       await ensureAudioContext();
       
       if (result.audio && audioRef.current) {
@@ -251,7 +248,6 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
           </Button>
         </div>
 
-        {/* Console de Saída e Transcrição */}
         <div className={cn("w-[800px] hud-glass rounded-[50px] p-14 border-2 transition-all duration-700 flex flex-col items-center text-center", isTransmitting ? "border-secondary scale-105 bg-primary/10" : "border-primary/50")}>
           <div className="flex justify-between w-full mb-10 opacity-70 text-[12px] font-code tracking-[0.7em] font-black">
              <div className="flex items-center gap-4 text-secondary"><MonitorDown className="w-6 h-6" /> STATUS: PROGRAMA_INSTALADO</div>
@@ -263,7 +259,6 @@ export function VoiceLink({ onProcessingChange }: { onProcessingChange: (val: bo
             </p>
           </div>
 
-          {/* Input de Script (Backup para voz) */}
           {isActive && (
             <form onSubmit={handleScriptSubmit} className="mt-12 w-full relative group">
               <Terminal className="absolute left-6 top-1/2 -translate-y-1/2 w-7 h-7 text-primary/30 group-focus-within:text-primary transition-colors" />
