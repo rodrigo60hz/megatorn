@@ -65,16 +65,6 @@ export function KineticCore({ isProcessing = false }: KineticCoreProps) {
         "bg-[repeating-conic-gradient(from_0deg,transparent_0deg,transparent_5deg,rgba(255,191,0,0.08)_5deg,rgba(255,191,0,0.08)_6deg)]",
         isProcessing ? "animate-[orbit_0.5s_linear_infinite]" : "animate-[orbit_40s_linear_infinite]"
       )} />
-
-      {/* Etiquetas de Soberania Partição A */}
-      <div className="absolute w-[1100px] h-[1100px] animate-[orbit_30s_linear_infinite]">
-         <div className="absolute top-0 left-1/2 -translate-x-1/2 font-code text-[14px] text-primary tracking-[1.5em] font-black uppercase drop-shadow-[0_0_10px_#FFBF00]">
-           MEGATRON_PARTITION_A_ACTIVE
-         </div>
-         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 font-code text-[14px] text-primary tracking-[1.5em] font-black uppercase drop-shadow-[0_0_10px_#FFBF00]">
-           PHYSICAL_STORAGE_48GB_ACTV
-         </div>
-      </div>
     </div>
   );
 }
