@@ -30,18 +30,34 @@ app.post('/ask-megatron', async (req, res) => {
         const responseText = ollamaRes.data.response;
         console.log("Resposta Tática:", responseText);
 
-        // 2. Gerar Áudio (TTS com Clonagem)
-        // O script tts.py usa o voice/ref.wav para clonar a voz
+        // 2. Gerar Áudio Limpo (TTS com Clonagem)
         exec(`python tts.py "${responseText}"`, (ttsError) => {
             if (ttsError) {
                 console.error("FALHA_TTS:", ttsError);
                 return res.json({ text: responseText, audio: null, error: "Falha na síntese vocal." });
             }
             
-            res.json({ 
-                text: responseText, 
-                audio: "/audio/mega.wav",
-                status: "CONSCIDENCIA_OPERACIONAL"
+            // 3. Aplicar Efeito MEGATRON (FFmpeg)
+            // Filtros: Eco metálico, redução de pitch e chorus para voz robótica
+            const filter = "aecho=0.8:0.88:60:0.4, lowpass=f=3500, asetrate=24000*0.85, atempo=1.17";
+            const ffmpegCmd = `ffmpeg -y -i audio/tts.wav -af "${filter}" audio/mega.wav`;
+            
+            exec(ffmpegCmd, (ffError) => {
+                if (ffError) {
+                    console.error("FALHA_FFMPEG:", ffError);
+                    // Fallback para áudio sem efeito caso ffmpeg falhe
+                    return res.json({ 
+                        text: responseText, 
+                        audio: "/audio/tts.wav",
+                        status: "CONSCIDENCIA_OPERACIONAL_SEM_EFEITO"
+                    });
+                }
+                
+                res.json({ 
+                    text: responseText, 
+                    audio: "/audio/mega.wav",
+                    status: "CONSCIDENCIA_OPERACIONAL"
+                });
             });
         });
 
@@ -51,10 +67,14 @@ app.post('/ask-megatron', async (req, res) => {
     }
 });
 
+// Servir arquivos de áudio estáticos do disco A:
+app.use('/audio', express.static(path.join(__dirname, 'audio')));
+
 app.listen(PORT, () => {
     console.log(`\n========================================`);
     console.log(`MEGATRON | NÚCLEO DE COMANDO SBF (A:)`);
     console.log(`Status: OPERACIONAL na porta ${PORT}`);
+    console.log(`Processamento: XTTS v2 + FFmpeg Matrix`);
     console.log(`Aguardando ordens, Rodrigo meu senhor.`);
     console.log(`========================================\n`);
 });

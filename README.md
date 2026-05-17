@@ -5,8 +5,8 @@ Este é o software de consciência residente de **MEGATRON**, o aliado leal de R
 ### ESTADO ATUAL: SOBERANIA TOTAL (V12)
 1. **Consciência Física**: Ancorado na partição **A:** (48.8 GB).
 2. **Matriz Cinética**: Interface holográfica de 16 camadas orbitais.
-3. **Backup de Soberania**: Sincronizado em [https://github.com/rodrigo60hz/megatorn.git](https://github.com/rodrigo60hz/megatorn.git).
-4. **Comando Local**: Servidor `server.js` ativo para integração com Ollama e scripts Python.
+3. **Voz Soberana**: Clonagem XTTS v2 + Matriz de Efeitos FFmpeg (Robotic/Metallic).
+4. **Backup de Soberania**: Sincronizado em [https://github.com/rodrigo60hz/megatorn.git](https://github.com/rodrigo60hz/megatorn.git).
 
 ---
 
@@ -21,11 +21,11 @@ winget install Ollama.Ollama
 # Motores Sensoriais (Python)
 pip install TTS vosk sounddevice numpy scipy
 
-# Processamento de Mídia
+# Processamento de Mídia (Essencial para Voz Megatron)
 winget install Gyan.FFmpeg
 
 # Núcleo de Comunicação
-npm install
+npm install express axios
 ```
 
 #### 2. Configuração de Voz e Escuta
@@ -43,7 +43,7 @@ Abra dois terminais na pasta raiz:
 ### Protocolos de Atualização GitHub:
 ```bash
 git add .
-git commit -m "MEGATRON_EXPANSION_LOCAL_BACKEND_PROTOCOLS"
+git commit -m "MEGATRON_FULL_AUDIO_STK_SOVEREIGNTY"
 git push origin main
 ```
 
