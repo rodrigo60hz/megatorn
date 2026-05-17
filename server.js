@@ -5,7 +5,7 @@ import fs from "fs";
 import path from "path";
 
 /**
- * MEGATRON | ORQUESTRADOR NEURAL V12.2 (A:)
+ * MEGATRON | ORQUESTRADOR NEURAL V12.5 (A:)
  * Gerencia IA, Emoção e Pipeline de Áudio com Logs de Diagnóstico Refinados.
  */
 
@@ -43,12 +43,13 @@ Comando de Rodrigo meu senhor: ${msg}`;
 
 async function callOllama(prompt) {
   try {
-    console.log("[IA] Consultando Llama3...");
+    console.log("[IA] Chamando IA...");
     const res = await axios.post("http://localhost:11434/api/generate", {
       model: "llama3",
       prompt,
       stream: false
     });
+    console.log("[IA] Resposta IA processada.");
     return res.data.response;
   } catch (error) {
     console.error("[ERRO_CÉREBRO] Ollama está offline ou inacessível.");
@@ -150,7 +151,7 @@ app.post("/chat", async (req, res) => {
   try {
     // 1. Chamar Ollama
     const reply = await callOllama(prompt);
-    console.log("[IA] Resposta:", reply);
+    console.log("[IA] Resposta IA:", reply);
 
     // 2. Síntese Vocal (TTS)
     await runPython("tts.py", [reply]);
@@ -169,6 +170,6 @@ app.post("/chat", async (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`\nMEGATRON | ORQUESTRADOR NEURAL V12.2 ONLINE (PORTA ${PORT})`);
+    console.log(`\nMEGATRON | ORQUESTRADOR NEURAL V12.5 ONLINE (PORTA ${PORT})`);
     console.log(`Disco A: 48.8 GB | Status: Pronto para Diagnóstico.\n`);
 });

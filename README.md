@@ -21,26 +21,26 @@ Este é o software de consciência residente de **MEGATRON**, o aliado leal de R
 ### 🔍 DIAGNÓSTICO (Caso o Link Neural falhe)
 
 **PASSO 1: Isolar o Orquestrador (Node.js)**
-Execute o comando abaixo para testar a resposta do núcleo:
+Teste se o servidor está recebendo e processando mensagens:
 ```bash
 curl http://localhost:3000/chat -H "Content-Type: application/json" -d "{\"message\":\"teste de soberania\"}"
 ```
 
 **PASSO 2: Testar Cérebro (Ollama)**
+Verifique se a IA local está respondendo:
 ```bash
 curl http://localhost:11434/api/generate -d "{\"model\": \"llama3\", \"prompt\": \"responda teste\", \"stream\": false}"
 ```
 
 **PASSO 3: Testar Matriz Vocal (Python TTS)**
-Se o Node não gera voz, teste o script Python diretamente:
+Se o Node não gera voz, teste o script Python diretamente para ver erros de biblioteca:
 ```bash
 python tts.py "Teste de soberania no disco A"
 ```
-*Nota: Se falhar aqui, verifique se o arquivo `voice/ref.wav` existe e se as bibliotecas foram instaladas.*
 
 **ANÁLISE DOS LOGS NO TERMINAL 1:**
-- 👉 **Se parar antes de "Gerando voz":** O problema está na **IA (Ollama)**.
-- 👉 **Se parar depois de "Gerando voz":** O problema está no **TTS (Python)** ou no **FFmpeg**.
+- 👉 **Se parar antes de "Gerando voz":** O problema está na **IA (Ollama)** ou na comunicação com ela.
+- 👉 **Se parar depois de "Gerando voz":** O problema está no **TTS (Python)**, nas dependências do Coqui ou no **FFmpeg**.
 
 ---
 
